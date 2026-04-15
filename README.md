@@ -1,188 +1,132 @@
-# Ads Attribution & Uplift Modeling 🚀
+# Ads Attribution Project
 
-## 📌 Project Overview
+This repository is a working codebase for experimenting with ad attribution data, sample generation, and a baseline click-through-rate (CTR) model.
 
-This project simulates a real-world advertising system to optimize **conversion prediction, attribution, and budget allocation**.
+The current focus is practical and reproducible:
 
-Starting from raw user interaction logs, we built an end-to-end pipeline including:
+- create a local sample from the raw dataset
+- train a baseline CTR model from config
+- save run artifacts in a predictable place
+- keep the code organized under `src/ads_project/`
 
-- CTR prediction
-- Feature engineering
-- Multi-touch attribution
-- Uplift (causal) modeling
+This repo does not claim causal uplift results from observational click logs. The baseline model is useful as a starting point, not as proof of incremental ad value.
 
-The goal is to move beyond simple click prediction and answer:
+## Current workflow
 
-👉 _"Which users should we target to maximize incremental conversions?"_
+1. Place the raw dataset at `data/raw/criteo_attribution_dataset.tsv.gz`
+2. Generate a parquet sample
+3. Train the baseline CTR model on the sample
+4. Inspect artifacts under `artifacts/runs/`
 
----
+The raw dataset and generated sample are treated as local-only working files.
 
-## 🧠 Key Components
+## Setup
 
-### 1. CTR Prediction
+Install dependencies from `requirements.txt`:
 
-- Built baseline Logistic Regression model
-- Improved performance using XGBoost
-- Feature engineering:
-
-  - campaign-level CTR encoding
-  - user behavior features
-  - temporal features
-
-📈 Result:
-
-- Logistic Regression AUC: ~0.62
-- XGBoost AUC: ~0.75
-
----
-
-### 2. Feature Engineering
-
-- Campaign CTR encoding (mean encoding)
-- Log transformations (cost, CPO)
-- Sequential behavior features:
-
-  - time since last click
-  - click position
-
-- Categorical features (campaign, categories)
-
----
-
-### 3. Attribution Modeling
-
-#### Last-touch attribution
-
-- Assigns full credit to the final interaction
-
-#### Multi-touch attribution
-
-- Uses dataset-provided attribution weights
-
-#### Linear attribution
-
-- Evenly distributes credit across all touches
-
-📊 Insight:
-
-- Last-touch tends to over-credit late-stage campaigns
-- Multi-touch reveals earlier funnel contributions
-
----
-
-### 4. Ranking System
-
-We simulate ad ranking using:
-
-```python
-score = predicted_ctr × value (CPO)
+```bash
+pip install -r requirements.txt
 ```
 
-This mimics real-world ad auction logic (e.g., eCPM / expected value ranking).
+The project is organized as a `src/` layout, so the runnable module commands below use `PYTHONPATH=src`.
 
----
+## Run the sample pipeline
 
-### 5. Uplift Modeling (Causal Inference) ⭐
+Generate a parquet sample from the raw TSV:
 
-Instead of predicting:
-👉 "Who will convert?"
-
-We predict:
-👉 "Who will convert _because of the ad_?"
-
-#### Approach:
-
-- Define treatment: `click = 1`
-- Split data:
-
-  - Treated group
-  - Control group
-
-- Train two models:
-
-  - P(conversion | treated)
-  - P(conversion | control)
-
-#### Uplift:
-
-```
-uplift = P_treated - P_control
+```bash
+python scripts/make_sample.py
 ```
 
----
+Or run the shared module entrypoint directly:
 
-## 📊 Results
-
-### CTR vs Uplift
-
-- Correlation ≈ 0
-  👉 CTR ≠ true incremental value
-
----
-
-### Conversion Lift
-
-| Group               | Conversion Rate |
-| ------------------- | --------------- |
-| Top 10% (by uplift) | ~22%            |
-| Bottom 10%          | ~0.2%           |
-
-👉 Massive improvement in targeting efficiency
-
----
-
-## 💡 Business Impact
-
-This project demonstrates how to:
-
-- Avoid wasting budget on users who would convert anyway
-- Identify high-impact users for ads
-- Improve ROI through causal modeling
-- Move from prediction → decision optimization
-
----
-
-## 🛠 Tech Stack
-
-- Python (Pandas, NumPy)
-- Scikit-learn
-- XGBoost
-- Jupyter Notebook
-
----
-
-## 📁 Project Structure
-
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.sample_data --config configs/sample.yaml
 ```
-ads-attribution-project/
-│
-├── notebooks/
-│   ├── 01_eda.ipynb
-│   ├── 02_ctr_model.ipynb
-│
-├── data/
+
+The default sample config is in `configs/sample.yaml`. It reads from:
+
+- `data/raw/criteo_attribution_dataset.tsv.gz`
+
+and writes to:
+
+- `data/samples/sample_1m.parquet`
+
+## Train the baseline CTR model
+
+Run the baseline logistic regression pipeline:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.train_ctr --config configs/ctr_baseline.yaml
+```
+
+The default training config is in `configs/ctr_baseline.yaml`. It expects the sample parquet created above.
+
+Each run writes artifacts to a timestamped directory under:
+
+- `artifacts/runs/<timestamp>_ctr_baseline/`
+
+Typical outputs include:
+
+- `config.yaml`
+- `metrics.json`
+- `model.joblib`
+
+## Repository layout
+
+```text
+.
+├── configs/
+│   ├── sample.yaml
+│   └── ctr_baseline.yaml
 ├── scripts/
-├── README.md
+│   └── make_sample.py
+├── src/
+│   └── ads_project/
+│       ├── artifacts.py
+│       ├── config.py
+│       ├── data/
+│       ├── evaluation/
+│       ├── models/
+│       └── pipeline/
+├── data/
+│   ├── raw/
+│   └── samples/
+└── artifacts/
 ```
 
----
+## Code organization
 
-## 🚀 Future Improvements
+- `src/ads_project/config.py` loads YAML config files.
+- `src/ads_project/data/` holds low-level data IO and sampling helpers.
+- `src/ads_project/models/` holds the baseline model and time-ordered split logic.
+- `src/ads_project/evaluation/` computes model metrics.
+- `src/ads_project/artifacts.py` writes run outputs.
+- `src/ads_project/pipeline/` contains the runnable CLI entrypoints.
 
-- Doubly Robust / Meta-learners (T-Learner, X-Learner)
-- Uplift tree models
-- Real-time bidding simulation
-- Budget allocation optimization
+## Notes on interpretation
 
----
+- The baseline CTR model is intentionally simple and may perform weakly.
+- Use it to validate data flow, feature wiring, and artifact tracking.
+- Do not interpret CTR scores as causal uplift.
+- If you want incremental impact or lift estimation, that needs a separate causal design.
 
-## 🎯 Key Takeaway
+## Legacy notebooks and references
 
-👉 Traditional CTR models optimize for clicks
-👉 Uplift models optimize for **true causal impact**
+The repository still includes notebook and raw-data reference material for exploration:
 
-This is critical for:
+- `notebooks/01_eda.ipynb`
+- `notebooks/02_ctr_model.ipynb`
+- `data/raw/README.md`
+- `data/raw/Experiments.ipynb`
 
-- Ads ranking
-- Growth strategy
-- Marketing ROI optimization
+These are useful for context, but the runnable project now lives in the config-backed scripts and `src/ads_project/` package.
+
+## Next direction
+
+The most natural next steps are:
+
+- extract additional feature engineering into reusable modules
+- add leakage-safe train-only encodings
+- compare improved features against the current baseline
+- keep each step small enough to validate end to end
