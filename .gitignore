@@ -13,10 +13,10 @@ data/processed/
 data/samples/
 
 # models
-models/
+/models/
 
 # artifacts
-artifacts/
+/artifacts/
 
 # mac
 .DS_Store

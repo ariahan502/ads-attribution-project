@@ -1,0 +1,22 @@
+dataset_path: data/samples/sample_1m.parquet
+timestamp_col: timestamp
+label: click
+numeric_features:
+  - cost
+  - cpo
+  - time_since_last_click
+categorical_features:
+  - cat1
+  - cat2
+  - cat3
+  - cat4
+  - cat5
+  - cat6
+  - cat7
+  - cat8
+  - cat9
+  - campaign
+train_fraction: 0.8
+max_iter: 100
+output_dir: artifacts/runs
+run_name: ctr_baseline
