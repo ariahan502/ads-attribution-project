@@ -1,0 +1,22 @@
+# virtual env
+.venv/
+
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# data
+data/raw/
+data/interim/
+data/processed/
+data/samples/
+
+# models
+models/
+
+# artifacts
+artifacts/
+
+# mac
+.DS_Store
