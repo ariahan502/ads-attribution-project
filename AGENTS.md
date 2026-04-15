@@ -26,6 +26,37 @@ Good progress in this repo looks like:
 - one measurable validation result
 - one clear next step
 
+## New Session Bootstrap
+
+If you are starting in a fresh session, do not rely on prior chat context. Rebuild context from the repo itself.
+
+Use this sequence:
+
+1. Read `AGENTS.md`
+2. Check `git status`
+3. Read `ROADMAP.md` for the high-level direction
+4. Read local planning docs if they exist:
+   - `doc/execution-plan.md`
+   - relevant `doc/feature-xxx/` notes
+5. Inspect the currently implemented pipeline surface:
+   - `configs/`
+   - `src/ads_project/pipeline/`
+   - `src/ads_project/models/`
+   - `src/ads_project/data/`
+6. Validate the current baseline commands before starting new work when practical
+
+If the user says “check where we are and pick the next task,” default to:
+
+1. identify the highest-priority task marked `New`, `Scoped`, `Partial`, or `In Progress` in `doc/execution-plan.md`
+2. prefer the smallest task that can be completed with a real validation step
+3. if the task is still too large, break it down in a local planning doc before coding
+
+Before making changes, summarize:
+
+- current repo state
+- current highest-value next task
+- planned validation command
+
 ## Repo Structure
 
 Tracked source-of-truth code should live in:
@@ -114,6 +145,16 @@ If a full run is expensive, do a smoke run first.
 
 If validation is skipped, say so clearly and explain why.
 
+Current known validation commands:
+
+- sample generation:
+  - `python scripts/make_sample.py`
+  - `PYTHONPATH=src python -m ads_project.pipeline.sample_data --config configs/sample.yaml`
+- baseline CTR training:
+  - `PYTHONPATH=src python -m ads_project.pipeline.train_ctr --config configs/ctr_baseline.yaml`
+
+Use a smoke config override when faster feedback is needed.
+
 ## Baseline Modeling Guidance
 
 The current CTR pipeline exists to create a reproducible baseline, not to claim a strong final model.
@@ -156,3 +197,14 @@ Unless the user redirects, the next highest-value work is:
 4. add richer evaluation metrics and reports
 
 If that work turns out to be too large, break it down in `doc/feature-ctr-evaluation/` before coding.
+
+## Session Handoff Standard
+
+At the end of a work session, leave enough state for the next agent to continue without chat history:
+
+- committed code for tracked repo changes
+- updated local planning docs if priorities or discoveries changed
+- at least one concrete validation result
+- a short statement of the next recommended task
+
+If you discover new follow-up work, add it to `doc/execution-plan.md` instead of leaving it only in a chat reply.
