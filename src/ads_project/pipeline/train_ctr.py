@@ -4,7 +4,14 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from ads_project.artifacts import make_run_dir, write_json, write_model, write_yaml
+from ads_project.artifacts import (
+    build_run_manifest,
+    current_git_commit,
+    make_run_dir,
+    write_json,
+    write_model,
+    write_yaml,
+)
 from ads_project.config import load_yaml_config
 from ads_project.data.io import read_parquet
 from ads_project.data.schema import validate_baseline_source_quality, validate_baseline_training_schema
@@ -93,6 +100,7 @@ def numeric_features_before_train_only_encodings(
 
 def main() -> None:
     args = parse_args()
+    config_path = Path(args.config)
     config = load_yaml_config(args.config)
     spec = baseline_spec_from_config(config)
 
@@ -211,10 +219,30 @@ def main() -> None:
     write_json(evaluation_summary, run_dir / "evaluation_summary.json")
     write_json(slice_report, run_dir / "slice_evaluation.json")
     write_model(model, run_dir / "model.joblib")
+    manifest = build_run_manifest(
+        run_dir=run_dir,
+        run_name=run_name,
+        pipeline_name="train_ctr",
+        config_path=config_path,
+        dataset_path=dataset_path,
+        train_rows=len(train_df),
+        test_rows=len(test_df),
+        metrics=metrics,
+        git_commit=current_git_commit(cwd=Path.cwd()),
+        extra_metadata={
+            "label": spec.label,
+            "feature_builder": feature_builder,
+            "train_only_encodings": train_only_encodings,
+            "numeric_features": spec.numeric_features,
+            "categorical_features": spec.categorical_features,
+        },
+    )
+    write_json(manifest, run_dir / "manifest.json")
 
     print(f"ROC AUC: {metrics['roc_auc']:.6f}")
     print(f"PR AUC: {metrics['pr_auc']:.6f}")
     print(f"Log Loss: {metrics['log_loss']:.6f}")
+    print("Saved run manifest: manifest.json")
     print(
         "Saved slice evaluation "
         f"(top {evaluation_top_campaigns} campaigns, {evaluation_time_slices} time slices)"
