@@ -7,7 +7,7 @@ from typing import Any
 from ads_project.artifacts import make_run_dir, write_json, write_model, write_yaml
 from ads_project.config import load_yaml_config
 from ads_project.data.io import read_parquet
-from ads_project.evaluation.metrics import binary_classification_metrics
+from ads_project.evaluation.metrics import binary_classification_metrics, calibration_and_lift_summary
 from ads_project.features import add_campaign_ctr_encoding, build_ctr_features
 from ads_project.models.baseline import BaselineSpec, fit_baseline_model, predict_scores
 from ads_project.models.splits import time_ordered_train_test_split
@@ -123,6 +123,7 @@ def main() -> None:
     model = fit_baseline_model(train_df, spec=spec)
     test_scores = predict_scores(model, test_df, spec=spec)
     metrics = binary_classification_metrics(test_df[spec.label], test_scores)
+    evaluation_summary = calibration_and_lift_summary(test_df[spec.label], test_scores)
 
     run_dir = make_run_dir(output_dir, run_name=run_name)
     write_yaml(config, run_dir / "config.yaml")
@@ -141,9 +142,12 @@ def main() -> None:
         },
         run_dir / "metrics.json",
     )
+    write_json(evaluation_summary, run_dir / "evaluation_summary.json")
     write_model(model, run_dir / "model.joblib")
 
     print(f"ROC AUC: {metrics['roc_auc']:.6f}")
+    print(f"PR AUC: {metrics['pr_auc']:.6f}")
+    print(f"Log Loss: {metrics['log_loss']:.6f}")
     print(f"Saved run artifacts to: {run_dir}")
 
 
