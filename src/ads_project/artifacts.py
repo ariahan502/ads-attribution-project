@@ -11,7 +11,7 @@ import yaml
 
 
 def make_run_dir(base_dir: str | Path, run_name: str | None = None) -> Path:
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     suffix = run_name or "run"
     run_dir = Path(base_dir) / f"{timestamp}_{suffix}"
     run_dir.mkdir(parents=True, exist_ok=False)
