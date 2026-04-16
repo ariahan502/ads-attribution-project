@@ -19,8 +19,11 @@ def parse_args() -> argparse.Namespace:
 
 def sample_spec_from_config(config_path: str | Path) -> SampleSpec:
     config = load_yaml_config(config_path)
+    source_path = config.get("source_path", config.get("raw_path"))
+    if source_path is None:
+        raise ValueError("sample config must define source_path or raw_path")
     return SampleSpec(
-        raw_path=Path(config["raw_path"]),
+        source_path=Path(source_path),
         sample_path=Path(config["sample_path"]),
         nrows=int(config.get("nrows", 1_000_000)),
     )
@@ -30,7 +33,7 @@ def main() -> None:
     args = parse_args()
     spec = sample_spec_from_config(args.config)
 
-    print(f"Loading raw data from: {spec.raw_path}")
+    print(f"Loading source data from: {spec.source_path}")
     rows, cols = build_head_sample(spec)
     print(f"Loaded shape: ({rows}, {cols})")
     print(f"Saved sample to: {spec.sample_path}")

@@ -1,0 +1,3 @@
+source_path: data/fixtures/ctr_smoke_seed.parquet
+sample_path: data/samples/sample_smoke.parquet
+nrows: 500

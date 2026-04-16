@@ -1,0 +1,29 @@
+dataset_path: data/samples/sample_smoke.parquet
+timestamp_col: timestamp
+label: click
+feature_builder: ctr_notebook_v1
+train_only_encodings:
+  - campaign_ctr
+numeric_features:
+  - log_cost
+  - log_cpo
+  - time_since_last_click
+  - has_prev_click
+  - campaign_ctr
+categorical_features:
+  - cat1
+  - cat2
+  - cat3
+  - cat4
+  - cat5
+  - cat6
+  - cat7
+  - cat8
+  - cat9
+  - campaign
+train_fraction: 0.8
+max_iter: 100
+evaluation_top_campaigns: 5
+evaluation_time_slices: 4
+output_dir: artifacts/runs
+run_name: ctr_smoke

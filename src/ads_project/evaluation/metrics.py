@@ -11,7 +11,9 @@ def _safe_roc_auc(y_true_series: pd.Series, y_score_series: pd.Series) -> float 
     return float(roc_auc_score(y_true_series, y_score_series))
 
 
-def _safe_pr_auc(y_true_series: pd.Series, y_score_series: pd.Series) -> float:
+def _safe_pr_auc(y_true_series: pd.Series, y_score_series: pd.Series) -> float | None:
+    if y_true_series.nunique() < 2:
+        return None
     return float(average_precision_score(y_true_series, y_score_series))
 
 
@@ -19,7 +21,7 @@ def _safe_log_loss(y_true_series: pd.Series, y_score_series: pd.Series) -> float
     return float(log_loss(y_true_series, y_score_series, labels=[0, 1]))
 
 
-def binary_classification_metrics(y_true, y_score) -> dict[str, float]:
+def binary_classification_metrics(y_true, y_score) -> dict[str, float | None]:
     y_true_series = pd.Series(np.asarray(y_true), copy=False).astype(float)
     y_score_series = pd.Series(np.asarray(y_score), copy=False).astype(float)
 
