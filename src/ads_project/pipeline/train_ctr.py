@@ -7,7 +7,11 @@ from typing import Any
 from ads_project.artifacts import make_run_dir, write_json, write_model, write_yaml
 from ads_project.config import load_yaml_config
 from ads_project.data.io import read_parquet
-from ads_project.evaluation.metrics import binary_classification_metrics, calibration_and_lift_summary
+from ads_project.evaluation.metrics import (
+    binary_classification_metrics,
+    calibration_and_lift_summary,
+    slice_level_report,
+)
 from ads_project.features import add_campaign_ctr_encoding, build_ctr_features
 from ads_project.models.baseline import BaselineSpec, fit_baseline_model, predict_scores
 from ads_project.models.splits import time_ordered_train_test_split
@@ -87,6 +91,8 @@ def main() -> None:
     run_name = config.get("run_name", "ctr_baseline")
     max_rows = config.get("max_rows")
     feature_builder = config.get("feature_builder")
+    evaluation_top_campaigns = int(config.get("evaluation_top_campaigns", 10))
+    evaluation_time_slices = int(config.get("evaluation_time_slices", 5))
     train_only_encodings = _coerce_str_list(
         config.get("train_only_encodings", []),
         field_name="train_only_encodings",
@@ -124,6 +130,15 @@ def main() -> None:
     test_scores = predict_scores(model, test_df, spec=spec)
     metrics = binary_classification_metrics(test_df[spec.label], test_scores)
     evaluation_summary = calibration_and_lift_summary(test_df[spec.label], test_scores)
+    slice_report = slice_level_report(
+        test_df.assign(pred_score=test_scores),
+        label_col=spec.label,
+        score_col="pred_score",
+        campaign_col="campaign",
+        timestamp_col=timestamp_col,
+        top_campaigns=evaluation_top_campaigns,
+        time_slices=evaluation_time_slices,
+    )
 
     run_dir = make_run_dir(output_dir, run_name=run_name)
     write_yaml(config, run_dir / "config.yaml")
@@ -143,11 +158,16 @@ def main() -> None:
         run_dir / "metrics.json",
     )
     write_json(evaluation_summary, run_dir / "evaluation_summary.json")
+    write_json(slice_report, run_dir / "slice_evaluation.json")
     write_model(model, run_dir / "model.joblib")
 
     print(f"ROC AUC: {metrics['roc_auc']:.6f}")
     print(f"PR AUC: {metrics['pr_auc']:.6f}")
     print(f"Log Loss: {metrics['log_loss']:.6f}")
+    print(
+        "Saved slice evaluation "
+        f"(top {evaluation_top_campaigns} campaigns, {evaluation_time_slices} time slices)"
+    )
     print(f"Saved run artifacts to: {run_dir}")
 
 

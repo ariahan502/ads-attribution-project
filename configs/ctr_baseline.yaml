@@ -23,5 +23,7 @@ categorical_features:
   - campaign
 train_fraction: 0.8
 max_iter: 100
+evaluation_top_campaigns: 10
+evaluation_time_slices: 5
 output_dir: artifacts/runs
 run_name: ctr_baseline
