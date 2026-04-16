@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
@@ -22,10 +23,22 @@ class BaselineSpec:
 
 
 def build_logistic_regression_pipeline(spec: BaselineSpec) -> Pipeline:
+    numeric_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="median")),
+        ]
+    )
+    categorical_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="most_frequent")),
+            ("encode", OneHotEncoder(handle_unknown="ignore")),
+        ]
+    )
+
     preprocess = ColumnTransformer(
         transformers=[
-            ("num", "passthrough", spec.numeric_features),
-            ("cat", OneHotEncoder(handle_unknown="ignore"), spec.categorical_features),
+            ("num", numeric_pipeline, spec.numeric_features),
+            ("cat", categorical_pipeline, spec.categorical_features),
         ]
     )
 

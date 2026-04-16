@@ -8,6 +8,7 @@ from ads_project.artifacts import make_run_dir, write_json, write_model, write_y
 from ads_project.config import load_yaml_config
 from ads_project.data.io import read_parquet
 from ads_project.evaluation.metrics import binary_classification_metrics
+from ads_project.features import add_campaign_ctr_encoding, build_ctr_features
 from ads_project.models.baseline import BaselineSpec, fit_baseline_model, predict_scores
 from ads_project.models.splits import time_ordered_train_test_split
 
@@ -39,6 +40,41 @@ def baseline_spec_from_config(config: dict[str, Any]) -> BaselineSpec:
     )
 
 
+def apply_feature_builder(df, *, builder_name: str | None):
+    if builder_name in (None, "none"):
+        return df
+    if builder_name == "ctr_notebook_v1":
+        return build_ctr_features(df)
+    raise ValueError(f"Unsupported feature_builder: {builder_name}")
+
+
+def apply_train_only_encodings(
+    train_df,
+    test_df,
+    *,
+    spec: BaselineSpec,
+    encoding_names: list[str],
+):
+    metadata: dict[str, Any] = {}
+    train_encoded = train_df
+    test_encoded = test_df
+
+    for encoding_name in encoding_names:
+        if encoding_name == "campaign_ctr":
+            train_encoded, test_encoded, encoding_metadata = add_campaign_ctr_encoding(
+                train_encoded,
+                test_encoded,
+                campaign_col="campaign",
+                label_col=spec.label,
+                output_col="campaign_ctr",
+            )
+            metadata.update(encoding_metadata)
+            continue
+        raise ValueError(f"Unsupported train_only_encoding: {encoding_name}")
+
+    return train_encoded, test_encoded, metadata
+
+
 def main() -> None:
     args = parse_args()
     config = load_yaml_config(args.config)
@@ -50,6 +86,11 @@ def main() -> None:
     output_dir = Path(config.get("output_dir", "artifacts/runs"))
     run_name = config.get("run_name", "ctr_baseline")
     max_rows = config.get("max_rows")
+    feature_builder = config.get("feature_builder")
+    train_only_encodings = _coerce_str_list(
+        config.get("train_only_encodings", []),
+        field_name="train_only_encodings",
+    )
 
     print(f"Loading training data from: {dataset_path}")
     df = read_parquet(dataset_path)
@@ -58,12 +99,26 @@ def main() -> None:
         df = df.iloc[: int(max_rows)].copy()
         print(f"Using max_rows subset: {len(df)}")
 
+    df = apply_feature_builder(df, builder_name=feature_builder)
+    if feature_builder not in (None, "none"):
+        print(f"Applied feature builder: {feature_builder}")
+
     train_df, test_df = time_ordered_train_test_split(
         df,
         timestamp_col=timestamp_col,
         train_fraction=train_fraction,
     )
     print(f"Train rows: {len(train_df)} | Test rows: {len(test_df)}")
+
+    encoding_metadata: dict[str, Any] = {}
+    if train_only_encodings:
+        train_df, test_df, encoding_metadata = apply_train_only_encodings(
+            train_df,
+            test_df,
+            spec=spec,
+            encoding_names=train_only_encodings,
+        )
+        print(f"Applied train-only encodings: {', '.join(train_only_encodings)}")
 
     model = fit_baseline_model(train_df, spec=spec)
     test_scores = predict_scores(model, test_df, spec=spec)
@@ -77,9 +132,12 @@ def main() -> None:
             "train_rows": len(train_df),
             "test_rows": len(test_df),
             "label": spec.label,
+            "feature_builder": feature_builder,
+            "train_only_encodings": train_only_encodings,
             "numeric_features": spec.numeric_features,
             "categorical_features": spec.categorical_features,
             **metrics,
+            **encoding_metadata,
         },
         run_dir / "metrics.json",
     )
