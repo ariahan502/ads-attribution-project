@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ads_project.data.io import read_tabular, write_parquet
-from ads_project.data.schema import validate_baseline_source_schema
+from ads_project.data.schema import validate_baseline_source_quality, validate_baseline_source_schema
 
 
 @dataclass(frozen=True)
@@ -17,5 +17,6 @@ class SampleSpec:
 def build_head_sample(spec: SampleSpec) -> tuple[int, int]:
     df = read_tabular(spec.source_path, nrows=spec.nrows)
     validate_baseline_source_schema(df)
+    validate_baseline_source_quality(df)
     write_parquet(df, spec.sample_path)
     return df.shape

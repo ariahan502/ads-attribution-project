@@ -14,6 +14,7 @@ class ColumnContract:
 
 BASELINE_REQUIRED_SOURCE_COLUMNS: tuple[ColumnContract, ...] = (
     ColumnContract("timestamp", "integer"),
+    ColumnContract("uid", "integer"),
     ColumnContract("campaign", "integer"),
     ColumnContract("click", "integer"),
     ColumnContract("cost", "numeric"),
@@ -70,6 +71,32 @@ def validate_binary_label(df: pd.DataFrame, *, label_col: str) -> None:
         raise ValueError(f"{label_col} must be binary with values in {{0, 1}}; found {invalid}")
 
 
+def validate_baseline_source_quality(df: pd.DataFrame) -> None:
+    required_non_null = [contract.name for contract in BASELINE_REQUIRED_SOURCE_COLUMNS]
+    null_columns = [column for column in required_non_null if df[column].isna().any()]
+    if null_columns:
+        raise ValueError(f"baseline source has nulls in required columns: {null_columns}")
+
+    duplicate_rows = int(df.duplicated().sum())
+    if duplicate_rows:
+        raise ValueError(f"baseline source contains {duplicate_rows} fully duplicated rows")
+
+    duplicate_keys = int(df.duplicated(subset=["uid", "timestamp", "campaign"]).sum())
+    if duplicate_keys:
+        raise ValueError(
+            "baseline source contains duplicate uid/timestamp/campaign keys: "
+            f"{duplicate_keys}"
+        )
+
+    _validate_min_value(df, column="timestamp", minimum=0)
+    _validate_min_value(df, column="cost", minimum=0)
+    _validate_min_value(df, column="cpo", minimum=0)
+    _validate_min_value(df, column="time_since_last_click", minimum=-1)
+    _validate_min_value(df, column="campaign", minimum=0)
+    for feature in [f"cat{i}" for i in range(1, 10)]:
+        _validate_min_value(df, column=feature, minimum=0)
+
+
 def _validate_contract(
     df: pd.DataFrame,
     contracts: list[ColumnContract] | tuple[ColumnContract, ...],
@@ -90,3 +117,11 @@ def _validate_contract(
 
     if wrong_type_columns:
         raise ValueError(f"{schema_name} has incompatible column types: {wrong_type_columns}")
+
+
+def _validate_min_value(df: pd.DataFrame, *, column: str, minimum: float) -> None:
+    actual_min = float(df[column].min())
+    if actual_min < minimum:
+        raise ValueError(
+            f"baseline source column {column} must be >= {minimum}; found minimum {actual_min}"
+        )

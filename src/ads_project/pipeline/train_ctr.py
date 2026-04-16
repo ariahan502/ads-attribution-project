@@ -7,7 +7,7 @@ from typing import Any
 from ads_project.artifacts import make_run_dir, write_json, write_model, write_yaml
 from ads_project.config import load_yaml_config
 from ads_project.data.io import read_parquet
-from ads_project.data.schema import validate_baseline_training_schema
+from ads_project.data.schema import validate_baseline_source_quality, validate_baseline_training_schema
 from ads_project.evaluation.metrics import (
     binary_classification_metrics,
     calibration_and_lift_summary,
@@ -125,6 +125,8 @@ def main() -> None:
         categorical_features=spec.categorical_features,
     )
     print("Validated baseline source schema")
+    validate_baseline_source_quality(df)
+    print("Validated baseline source quality")
 
     df = apply_feature_builder(df, builder_name=feature_builder)
     if feature_builder not in (None, "none"):
