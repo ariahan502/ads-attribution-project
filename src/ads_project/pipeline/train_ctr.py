@@ -7,6 +7,7 @@ from typing import Any
 from ads_project.artifacts import make_run_dir, write_json, write_model, write_yaml
 from ads_project.config import load_yaml_config
 from ads_project.data.io import read_parquet
+from ads_project.data.schema import validate_baseline_training_schema
 from ads_project.evaluation.metrics import (
     binary_classification_metrics,
     calibration_and_lift_summary,
@@ -79,6 +80,17 @@ def apply_train_only_encodings(
     return train_encoded, test_encoded, metadata
 
 
+def numeric_features_before_train_only_encodings(
+    spec: BaselineSpec,
+    *,
+    encoding_names: list[str],
+) -> list[str]:
+    train_only_generated = set()
+    if "campaign_ctr" in encoding_names:
+        train_only_generated.add("campaign_ctr")
+    return [feature for feature in spec.numeric_features if feature not in train_only_generated]
+
+
 def main() -> None:
     args = parse_args()
     config = load_yaml_config(args.config)
@@ -105,9 +117,30 @@ def main() -> None:
         df = df.iloc[: int(max_rows)].copy()
         print(f"Using max_rows subset: {len(df)}")
 
+    validate_baseline_training_schema(
+        df,
+        label_col=spec.label,
+        timestamp_col=timestamp_col,
+        numeric_features=["cost", "cpo", "time_since_last_click"],
+        categorical_features=spec.categorical_features,
+    )
+    print("Validated baseline source schema")
+
     df = apply_feature_builder(df, builder_name=feature_builder)
     if feature_builder not in (None, "none"):
         print(f"Applied feature builder: {feature_builder}")
+
+    validate_baseline_training_schema(
+        df,
+        label_col=spec.label,
+        timestamp_col=timestamp_col,
+        numeric_features=numeric_features_before_train_only_encodings(
+            spec,
+            encoding_names=train_only_encodings,
+        ),
+        categorical_features=spec.categorical_features,
+    )
+    print("Validated baseline pre-encoding schema")
 
     train_df, test_df = time_ordered_train_test_split(
         df,
@@ -125,6 +158,22 @@ def main() -> None:
             encoding_names=train_only_encodings,
         )
         print(f"Applied train-only encodings: {', '.join(train_only_encodings)}")
+
+    validate_baseline_training_schema(
+        train_df,
+        label_col=spec.label,
+        timestamp_col=timestamp_col,
+        numeric_features=spec.numeric_features,
+        categorical_features=spec.categorical_features,
+    )
+    validate_baseline_training_schema(
+        test_df,
+        label_col=spec.label,
+        timestamp_col=timestamp_col,
+        numeric_features=spec.numeric_features,
+        categorical_features=spec.categorical_features,
+    )
+    print("Validated baseline training schema")
 
     model = fit_baseline_model(train_df, spec=spec)
     test_scores = predict_scores(model, test_df, spec=spec)
