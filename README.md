@@ -1,24 +1,29 @@
 # Ads Attribution Project
 
-This repository is a working codebase for experimenting with ad attribution data, sample generation, and a baseline click-through-rate (CTR) model.
+This repository is an offline ads modeling project that is being moved from notebook-heavy exploration into a reproducible, config-driven pipeline.
 
-The current focus is practical and reproducible:
+The current strongest path in the repo is:
 
-- create a local sample from the raw dataset
-- train a baseline CTR model from config
-- save run artifacts in a predictable place
-- keep the code organized under `src/ads_project/`
+- generate a reproducible parquet sample
+- train a split-aware CTR model from config
+- compare logistic regression and XGBoost on the same feature set
+- generate descriptive attribution summaries from package code
+- inspect a structured run bundle under `artifacts/runs/`
 
-This repo does not claim causal uplift results from observational click logs. The baseline model is useful as a starting point, not as proof of incremental ad value.
+This repo does not claim causal uplift from observational click logs. The current CTR pipeline is a reproducible modeling baseline and experiment surface, not proof of incremental ad value.
 
-## Current workflow
+## Current Repo Status
 
-1. Place the raw dataset at `data/raw/criteo_attribution_dataset.tsv.gz`
-2. Generate a parquet sample
-3. Train the baseline CTR model on the sample
-4. Inspect artifacts under `artifacts/runs/`
+What works today:
 
-The raw dataset and generated sample are treated as local-only working files.
+- deterministic smoke sample generation from a tracked fixture
+- deterministic sample generation from the raw local dataset
+- reusable CTR feature builders under `src/ads_project/features/`
+- train-only campaign CTR encoding with unseen-campaign fallback
+- time-aware train/validation/test splits
+- config-driven model comparison between logistic regression and XGBoost
+- config-driven descriptive attribution reporting for last-touch and linear multi-touch
+- structured run bundles with split counts, validation metrics, test metrics, evaluation summaries, and slice-level evaluation
 
 ## Setup
 
@@ -28,105 +33,278 @@ Install dependencies from `requirements.txt`:
 pip install -r requirements.txt
 ```
 
-The project is organized as a `src/` layout, so the runnable module commands below use `PYTHONPATH=src`.
-
-## Run the sample pipeline
-
-Generate a parquet sample from the raw TSV:
+Commands use the `src/` layout directly:
 
 ```bash
-python scripts/make_sample.py
+PYTHONPATH=src python -m ...
 ```
 
-Or run the shared module entrypoint directly:
+## Quickstart
+
+The fastest self-contained path does not require the full raw dataset.
+
+### 1. Build the smoke sample
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.sample_data --config configs/sample_smoke.yaml
+```
+
+This reads from the tracked fixture:
+
+- `data/fixtures/ctr_smoke_seed.parquet`
+
+and writes:
+
+- `data/samples/sample_smoke.parquet`
+
+### 2. Train the split-aware smoke CTR baseline
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.train_ctr --config configs/ctr_smoke_v2_split.yaml
+```
+
+This path uses:
+
+- feature builder: `ctr_notebook_v2`
+- train-only encoding: `campaign_ctr`
+- split shape: `train=70%`, `validation=10%`, `test=20%`
+
+### 3. Inspect the newest run bundle
+
+Each run writes to:
+
+- `artifacts/runs/<timestamp>_<run_name>/`
+
+For split-aware CTR runs, the most useful files are:
+
+- `config.yaml`
+- `run_summary.json`
+- `validation_metrics.json`
+- `test_metrics.json`
+- `evaluation_summary.json`
+- `slice_evaluation.json`
+- `model.joblib`
+- `manifest.json`
+
+## Full Sample Path
+
+If the raw dataset is available locally at:
+
+- `data/raw/criteo_attribution_dataset.tsv.gz`
+
+you can generate the 1M-row working sample with:
 
 ```bash
 PYTHONPATH=src python -m ads_project.pipeline.sample_data --config configs/sample.yaml
 ```
 
-The default sample config is in `configs/sample.yaml`. It reads from:
-
-- `data/raw/criteo_attribution_dataset.tsv.gz`
-
-and writes to:
+This writes:
 
 - `data/samples/sample_1m.parquet`
 
-## Train the baseline CTR model
+## Training Paths
 
-Run the baseline logistic regression pipeline:
+### Split-aware baseline training
+
+The current default split-aware baseline config is:
+
+- `configs/ctr_baseline_v2_split.yaml`
+
+Run it with:
 
 ```bash
-PYTHONPATH=src python -m ads_project.pipeline.train_ctr --config configs/ctr_baseline.yaml
+PYTHONPATH=src python -m ads_project.pipeline.train_ctr --config configs/ctr_baseline_v2_split.yaml
 ```
 
-The default training config is in `configs/ctr_baseline.yaml`. It expects the sample parquet created above.
+This trains one model, evaluates on both validation and test, and writes a run bundle.
 
-Each run writes artifacts to a timestamped directory under:
+### Model comparison
 
-- `artifacts/runs/<timestamp>_ctr_baseline/`
+To compare logistic regression and XGBoost on the same split-aware baseline:
 
-Typical outputs include:
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.compare_ctr --config configs/ctr_compare_baseline_v2_split.yaml
+```
 
-- `config.yaml`
-- `metrics.json`
-- `model.joblib`
+This creates:
 
-## Repository layout
+- one run bundle per model
+- one comparison bundle containing `comparison.json`
+
+The comparison report currently ranks models by test ROC AUC and also includes validation metrics for each candidate.
+
+## Attribution Path
+
+The repo now includes a first descriptive attribution workflow from package code.
+
+### Smoke attribution run
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_attribution --config configs/attribution_smoke.yaml
+```
+
+### Baseline attribution run
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_attribution --config configs/attribution_baseline.yaml
+```
+
+These runs currently produce:
+
+- `summary.json`
+- `campaign_summary.json`
+- `campaign_summary.csv`
+- `campaign_decision_report.json`
+- `campaign_decision_report.csv`
+- `campaign_report.json`
+- `manifest.json`
+
+The current schemes are:
+
+- `last_touch`
+- `multi_touch_linear`
+- `time_decay`
+
+The default time-decay setting is:
+
+- `time_decay_rate: 0.5`
+
+The attribution outputs are descriptive decision-support summaries, not causal estimates.
+
+The current campaign summary includes:
+
+- campaign volume and conversion totals
+- total cost
+- side-by-side `last_touch`, `multi_touch_linear`, and `time_decay`
+- scheme deltas
+- simple proxy ROI columns for linear and time-decay attribution
+
+The current decision-facing report adds:
+
+- spend share, click share, and conversion share
+- attributed conversion share under time decay
+- simple efficiency indices
+- heuristic priority buckets such as `scale_candidate`, `review_candidate`, and `monitor`
+
+These prioritization fields are intended as decision-support hints, not automated budget policy. Small-spend campaigns can look unusually efficient, so the report should still be reviewed alongside raw volume.
+
+## Config Guide
+
+Key configs currently in use:
+
+- `configs/sample_smoke.yaml`
+  - smoke sample from tracked fixture
+- `configs/sample.yaml`
+  - 1M-row local sample from raw dataset
+- `configs/ctr_smoke_v2_split.yaml`
+  - smoke training on split-aware CTR baseline
+- `configs/ctr_baseline_v2_split.yaml`
+  - main split-aware CTR baseline on the 1M sample
+- `configs/ctr_compare_baseline_v2_split.yaml`
+  - split-aware model comparison between logistic regression and XGBoost
+- `configs/attribution_smoke.yaml`
+  - smoke attribution report
+- `configs/attribution_baseline.yaml`
+  - baseline attribution report on the 1M sample
+
+Older configs are still kept for historical comparison and intermediate experiments:
+
+- `configs/ctr_baseline.yaml`
+- `configs/ctr_smoke.yaml`
+- `configs/ctr_baseline_v2_features.yaml`
+- `configs/ctr_compare_baseline.yaml`
+- `configs/ctr_compare_baseline_v2_features.yaml`
+
+## Current CTR Pipeline Shape
+
+Current active feature surface in the split-aware baseline:
+
+- numeric:
+  - `log_cost`
+  - `log_cpo`
+  - `time_since_last_click`
+  - `has_prev_click`
+  - `log_time_since_last_click`
+  - `campaign_ctr`
+- categorical:
+  - `cat1` ... `cat9`
+  - `campaign`
+  - `recency_bucket`
+
+Current safeguards:
+
+- source schema validation
+- source quality validation
+- row-wise feature building before split
+- time-aware train/validation/test split
+- train-only `campaign_ctr` encoding
+- separate validation and test metrics in split-aware bundles
+
+See the local note for feature assumptions and leakage risks:
+
+- `doc/feature-ctr-features/point-in-time-notes.md`
+
+## Repository Layout
 
 ```text
 .
 ├── configs/
-│   ├── sample.yaml
-│   └── ctr_baseline.yaml
 ├── scripts/
-│   └── make_sample.py
 ├── src/
 │   └── ads_project/
 │       ├── artifacts.py
 │       ├── config.py
 │       ├── data/
 │       ├── evaluation/
+│       ├── features/
 │       ├── models/
 │       └── pipeline/
 ├── data/
+│   ├── fixtures/
 │   ├── raw/
 │   └── samples/
-└── artifacts/
+├── artifacts/
+└── notebooks/
 ```
 
-## Code organization
+## Code Organization
 
-- `src/ads_project/config.py` loads YAML config files.
-- `src/ads_project/data/` holds low-level data IO and sampling helpers.
-- `src/ads_project/models/` holds the baseline model and time-ordered split logic.
-- `src/ads_project/evaluation/` computes model metrics.
-- `src/ads_project/artifacts.py` writes run outputs.
-- `src/ads_project/pipeline/` contains the runnable CLI entrypoints.
+- `src/ads_project/config.py`
+  - YAML config loading
+- `src/ads_project/data/`
+  - parquet IO, sampling, and schema checks
+- `src/ads_project/features/`
+  - reusable feature builders and train-only encodings
+- `src/ads_project/models/`
+  - baseline model specs and time-aware split helpers
+- `src/ads_project/evaluation/`
+  - classification metrics, calibration/lift summaries, slice-level reports
+- `src/ads_project/pipeline/`
+  - runnable CLI entrypoints for sampling, training, and model comparison
 
-## Notes on interpretation
+## Notes On Interpretation
 
-- The baseline CTR model is intentionally simple and may perform weakly.
-- Use it to validate data flow, feature wiring, and artifact tracking.
-- Do not interpret CTR scores as causal uplift.
-- If you want incremental impact or lift estimation, that needs a separate causal design.
+- CTR metrics here describe predictive ranking quality, not causal effect.
+- Attribution summaries here are descriptive and comparative, not causal.
+- Uplift and incrementality work are still planned separately.
+- The current uplift-style work is still observational notebook analysis, not a package-level causal pipeline.
+- Until stronger methods are added, any uplift-style score should be treated as association-based ranking rather than estimated incrementality.
 
-## Legacy notebooks and references
+See the local note for the current uplift framing:
 
-The repository still includes notebook and raw-data reference material for exploration:
+- `doc/feature-uplift/observational-method-notes.md`
+- `campaign_ctr` is train-only and safe for the current split-aware flow, but fold-aware fitting will be needed if the repo adds cross-validation or hyperparameter search.
+- `cpo` and `time_since_last_click` still have documented point-in-time caveats in the local leakage note.
+
+## Legacy Notebooks
+
+Notebooks remain useful for EDA and narrative analysis:
 
 - `notebooks/01_eda.ipynb`
 - `notebooks/02_ctr_model.ipynb`
-- `data/raw/README.md`
-- `data/raw/Experiments.ipynb`
 
-These are useful for context, but the runnable project now lives in the config-backed scripts and `src/ads_project/` package.
+The source of truth for reusable logic is now the config-backed package code under `src/ads_project/`.
 
-## Next direction
+## Current Best Next Step
 
-The most natural next steps are:
-
-- extract additional feature engineering into reusable modules
-- add leakage-safe train-only encodings
-- compare improved features against the current baseline
-- keep each step small enough to validate end to end
+The next highest-value task is upgrading the observational uplift framing into stronger methodology with adjustment baselines and uplift-specific evaluation, while keeping repo claims aligned with what the data can actually support today.

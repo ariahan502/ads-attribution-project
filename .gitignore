@@ -11,9 +11,19 @@ data/raw/
 data/interim/
 data/processed/
 data/samples/
+!data/fixtures/
+!data/fixtures/**
 
-# models
+# top-level generated model directories only
 /models/
+
+# safeguard tracked package code from broad ignore patterns
+!src/
+!src/ads_project/
+!src/ads_project/models/
+!src/ads_project/models/**
+!src/ads_project/features/
+!src/ads_project/features/**
 
 # artifacts
 /artifacts/

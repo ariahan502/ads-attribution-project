@@ -1,0 +1,5 @@
+dataset_path: data/samples/sample_1m.parquet
+output_dir: artifacts/runs
+run_name: attribution_baseline
+top_campaigns: 20
+time_decay_rate: 0.5

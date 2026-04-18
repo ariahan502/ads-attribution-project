@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import pandas as pd
 import yaml
 
 
@@ -30,6 +31,12 @@ def write_json(data: dict[str, Any], path: str | Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)
+
+
+def write_csv(df: pd.DataFrame, path: str | Path) -> None:
+    out_path = Path(path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out_path, index=False)
 
 
 def write_model(model: Any, path: str | Path) -> None:
@@ -60,9 +67,12 @@ def build_run_manifest(
     config_path: str | Path,
     dataset_path: str | Path,
     train_rows: int,
+    validation_rows: int | None,
     test_rows: int,
     metrics: dict[str, Any],
+    validation_metrics: dict[str, Any] | None,
     git_commit: str | None,
+    artifacts: dict[str, str] | None = None,
     extra_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     run_dir_path = Path(run_dir)
@@ -76,12 +86,19 @@ def build_run_manifest(
         "dataset_path": str(dataset_path),
         "row_counts": {
             "train_rows": train_rows,
+            "validation_rows": validation_rows,
             "test_rows": test_rows,
         },
-        "metrics_summary": metrics,
-        "artifacts": {
+        "metrics_summary": {
+            "validation": validation_metrics,
+            "test": metrics,
+        },
+        "artifacts": artifacts
+        or {
             "config": "config.yaml",
-            "metrics": "metrics.json",
+            "run_summary": "run_summary.json",
+            "test_metrics": "test_metrics.json",
+            "validation_metrics": "validation_metrics.json",
             "evaluation_summary": "evaluation_summary.json",
             "slice_evaluation": "slice_evaluation.json",
             "model": "model.joblib",
