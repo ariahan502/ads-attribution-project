@@ -1,0 +1,35 @@
+dataset_path: data/samples/sample_1m.parquet
+timestamp_col: timestamp
+feature_builder: ctr_notebook_v2
+synthetic_treatment_col: synthetic_treatment
+synthetic_outcome_col: synthetic_outcome
+true_effect_col: true_treatment_effect
+synthetic_seed: 42
+score_cols:
+  - observational_score
+  - doubly_robust_score
+numeric_features:
+  - log_cost
+  - log_cpo
+  - time_since_last_click
+  - has_prev_click
+  - log_time_since_last_click
+categorical_features:
+  - cat1
+  - cat2
+  - cat3
+  - cat4
+  - cat5
+  - cat6
+  - cat7
+  - cat8
+  - cat9
+  - campaign
+  - recency_bucket
+train_fraction: 0.7
+validation_fraction: 0.1
+propensity_clip: 0.05
+max_iter: 100
+ridge_alpha: 1.0
+output_dir: artifacts/runs
+run_name: uplift_semisynthetic_baseline

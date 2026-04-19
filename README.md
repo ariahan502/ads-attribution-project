@@ -25,6 +25,7 @@ What works today:
 - config-driven descriptive attribution reporting for last-touch and linear multi-touch
 - config-driven observational uplift baselines with propensity and doubly robust scoring
 - uplift policy-curve diagnostics for comparing observational and adjusted rankings across top-k groups
+- semi-synthetic uplift evaluation with a known treatment-effect signal
 - structured run bundles with split counts, validation metrics, test metrics, evaluation summaries, and slice-level evaluation
 
 ## Setup
@@ -227,6 +228,34 @@ The current uplift diagnostics include:
 
 Latest baseline validation showed that the simpler observational ranking outperformed the first doubly robust ranking on observed top-k conversion diagnostics. That result should guide the next methodological improvement rather than be presented as causal evidence.
 
+### Semi-synthetic uplift evaluation
+
+The repo also includes a controlled semi-synthetic path that injects synthetic treatment, outcome, and known treatment-effect columns into the existing feature table. This gives the uplift methods a known ranking target.
+
+Smoke run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_semisynthetic_smoke.yaml
+```
+
+Baseline run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_semisynthetic_baseline.yaml
+```
+
+These runs produce `known_effect_ranking.json`, which compares each learned score against the known treatment effect using rank correlations and top-k true-effect lift.
+
+Latest 1M-row validation showed weak recovery of the known effect ranking:
+
+- observational score Spearman correlation with true effect: `-0.164690`
+- doubly robust score Spearman correlation with true effect: `0.022254`
+- top-decile true-effect lift for observational score: `1.118392`
+- top-decile true-effect lift for doubly robust score: `1.121761`
+- oracle top-decile true-effect lift: `1.738078`
+
+This is a useful negative result: the evaluation harness is now in place, but the current uplift estimators need improvement before the project should make strong uplift-ranking claims.
+
 ## Config Guide
 
 Key configs currently in use:
@@ -249,6 +278,10 @@ Key configs currently in use:
   - smoke observational uplift baseline
 - `configs/uplift_baseline.yaml`
   - baseline observational uplift run on the 1M sample
+- `configs/uplift_semisynthetic_smoke.yaml`
+  - smoke semi-synthetic uplift evaluation with known treatment effect
+- `configs/uplift_semisynthetic_baseline.yaml`
+  - 1M-row semi-synthetic uplift evaluation with known treatment effect
 
 Older configs are still kept for historical comparison and intermediate experiments:
 
@@ -334,6 +367,7 @@ See the local note for feature assumptions and leakage risks:
 - The uplift pipeline now includes package-level observational adjustment baselines, but it is still not a causal identification pipeline.
 - The current uplift configs use observational `click` as treatment, so scores should be treated as adjusted association-based ranking rather than estimated incrementality.
 - The first doubly robust baseline is useful as a reproducible comparison point, but current policy-curve diagnostics do not support replacing the simpler observational ranking on this dataset.
+- The semi-synthetic evaluation path gives the project a known-effect benchmark, and current results show that uplift-ranking quality is still weak.
 
 See the local note for the current uplift framing:
 
@@ -352,4 +386,4 @@ The source of truth for reusable logic is now the config-backed package code und
 
 ## Current Best Next Step
 
-The next highest-value task is a semi-synthetic uplift evaluation path so ranking methods can be tested against a known signal instead of only observational top-k conversion diagnostics.
+The next highest-value task is improving the uplift estimators or feature set so semi-synthetic ranking recovery improves against the known treatment-effect benchmark.
