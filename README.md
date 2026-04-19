@@ -23,6 +23,8 @@ What works today:
 - time-aware train/validation/test splits
 - config-driven model comparison between logistic regression and XGBoost
 - config-driven descriptive attribution reporting for last-touch and linear multi-touch
+- config-driven observational uplift baselines with propensity and doubly robust scoring
+- uplift policy-curve diagnostics for comparing observational and adjusted rankings across top-k groups
 - structured run bundles with split counts, validation metrics, test metrics, evaluation summaries, and slice-level evaluation
 
 ## Setup
@@ -188,6 +190,43 @@ The current decision-facing report adds:
 
 These prioritization fields are intended as decision-support hints, not automated budget policy. Small-spend campaigns can look unusually efficient, so the report should still be reviewed alongside raw volume.
 
+## Uplift Path
+
+The repo includes a first observational uplift workflow. It is useful for reproducible ranking diagnostics, but it is not a causal identification pipeline.
+
+### Smoke uplift run
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_uplift --config configs/uplift_smoke.yaml
+```
+
+### Baseline uplift run
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_uplift --config configs/uplift_baseline.yaml
+```
+
+These runs currently produce:
+
+- `run_summary.json`
+- `validation_metrics.json`
+- `test_metrics.json`
+- `propensity_model.joblib`
+- `treated_outcome_model.joblib`
+- `control_outcome_model.joblib`
+- `doubly_robust_model.joblib`
+- `manifest.json`
+
+The current uplift diagnostics include:
+
+- propensity model metrics
+- top/bottom ranking diagnostics
+- policy curves across top-k fractions
+- observed conversion lift versus the full split baseline
+- treated/control observed outcome gaps within selected groups
+
+Latest baseline validation showed that the simpler observational ranking outperformed the first doubly robust ranking on observed top-k conversion diagnostics. That result should guide the next methodological improvement rather than be presented as causal evidence.
+
 ## Config Guide
 
 Key configs currently in use:
@@ -206,6 +245,10 @@ Key configs currently in use:
   - smoke attribution report
 - `configs/attribution_baseline.yaml`
   - baseline attribution report on the 1M sample
+- `configs/uplift_smoke.yaml`
+  - smoke observational uplift baseline
+- `configs/uplift_baseline.yaml`
+  - baseline observational uplift run on the 1M sample
 
 Older configs are still kept for historical comparison and intermediate experiments:
 
@@ -279,16 +322,18 @@ See the local note for feature assumptions and leakage risks:
   - baseline model specs and time-aware split helpers
 - `src/ads_project/evaluation/`
   - classification metrics, calibration/lift summaries, slice-level reports
+- `src/ads_project/uplift/`
+  - observational adjustment baselines for propensity and doubly robust scoring
 - `src/ads_project/pipeline/`
-  - runnable CLI entrypoints for sampling, training, and model comparison
+  - runnable CLI entrypoints for sampling, training, model comparison, attribution, and uplift
 
 ## Notes On Interpretation
 
 - CTR metrics here describe predictive ranking quality, not causal effect.
 - Attribution summaries here are descriptive and comparative, not causal.
-- Uplift and incrementality work are still planned separately.
-- The current uplift-style work is still observational notebook analysis, not a package-level causal pipeline.
-- Until stronger methods are added, any uplift-style score should be treated as association-based ranking rather than estimated incrementality.
+- The uplift pipeline now includes package-level observational adjustment baselines, but it is still not a causal identification pipeline.
+- The current uplift configs use observational `click` as treatment, so scores should be treated as adjusted association-based ranking rather than estimated incrementality.
+- The first doubly robust baseline is useful as a reproducible comparison point, but current policy-curve diagnostics do not support replacing the simpler observational ranking on this dataset.
 
 See the local note for the current uplift framing:
 
@@ -307,4 +352,4 @@ The source of truth for reusable logic is now the config-backed package code und
 
 ## Current Best Next Step
 
-The next highest-value task is upgrading the observational uplift framing into stronger methodology with adjustment baselines and uplift-specific evaluation, while keeping repo claims aligned with what the data can actually support today.
+The next highest-value task is a semi-synthetic uplift evaluation path so ranking methods can be tested against a known signal instead of only observational top-k conversion diagnostics.

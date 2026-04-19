@@ -24,6 +24,8 @@ data/samples/
 !src/ads_project/models/**
 !src/ads_project/features/
 !src/ads_project/features/**
+src/ads_project/**/__pycache__/
+src/ads_project/**/*.pyc
 
 # artifacts
 /artifacts/
