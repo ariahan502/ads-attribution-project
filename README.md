@@ -244,6 +244,14 @@ Baseline run:
 PYTHONPATH=src python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_semisynthetic_baseline.yaml
 ```
 
+Rank-feature benchmark run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_semisynthetic_rank_baseline.yaml
+```
+
+The rank-feature variant is benchmark-oriented: it adds full-table rank transforms for semi-synthetic evaluation, but it should not be treated as a serving-time-safe production feature set without a separate point-in-time design.
+
 These runs produce `known_effect_ranking.json`, which compares each learned score against the known treatment effect using rank correlations and top-k true-effect lift.
 
 Latest 1M-row validation showed weak recovery of the known effect ranking:
@@ -255,6 +263,15 @@ Latest 1M-row validation showed weak recovery of the known effect ranking:
 - oracle top-decile true-effect lift: `1.738078`
 
 This is a useful negative result: the evaluation harness is now in place, but the current uplift estimators need improvement before the project should make strong uplift-ranking claims.
+
+Adding semi-synthetic rank features improved recovery slightly but did not solve the problem:
+
+- doubly robust Spearman correlation improved from `0.022254` to `0.067060`
+- observational score Spearman correlation improved from `-0.164690` to `-0.149611`
+- observational top-decile true-effect lift improved from `1.118392` to `1.138518`
+- doubly robust top-decile true-effect lift stayed roughly flat at `1.121761`
+
+This suggests the benchmark is sensitive enough to detect incremental changes, but stronger uplift estimators are still needed.
 
 ## Config Guide
 
@@ -282,6 +299,10 @@ Key configs currently in use:
   - smoke semi-synthetic uplift evaluation with known treatment effect
 - `configs/uplift_semisynthetic_baseline.yaml`
   - 1M-row semi-synthetic uplift evaluation with known treatment effect
+- `configs/uplift_semisynthetic_rank_smoke.yaml`
+  - smoke semi-synthetic uplift evaluation with rank-style benchmark features
+- `configs/uplift_semisynthetic_rank_baseline.yaml`
+  - 1M-row semi-synthetic uplift evaluation with rank-style benchmark features
 
 Older configs are still kept for historical comparison and intermediate experiments:
 

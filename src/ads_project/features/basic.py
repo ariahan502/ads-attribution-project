@@ -38,3 +38,14 @@ def add_click_recency_transform_features(df: pd.DataFrame) -> pd.DataFrame:
     transformed["recency_bucket"] = recency_bucket.astype(int)
 
     return transformed
+
+
+def add_rank_features(df: pd.DataFrame) -> pd.DataFrame:
+    transformed = df.copy()
+
+    transformed["cost_rank"] = transformed["cost"].rank(method="average", pct=True)
+    transformed["cpo_rank"] = transformed["cpo"].rank(method="average", pct=True)
+    recency_for_rank = transformed["time_since_last_click"].fillna(0.0).clip(lower=0.0)
+    transformed["recency_rank"] = recency_for_rank.rank(method="average", pct=True)
+
+    return transformed
