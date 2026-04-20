@@ -309,16 +309,26 @@ These runs currently produce:
 
 - `policy_simulation.json`
 - `policy_simulation.csv`
+- `policy_decision_report.json`
+- `policy_decision_report.csv`
 - `run_summary.json`
 - `manifest.json`
 
-The report compares deterministic random targeting, learned top-k policies, and an oracle true-effect policy across configured budget fractions.
+The simulation report compares deterministic random targeting, learned top-k policies, and an oracle true-effect policy across configured budget fractions. The decision report summarizes the preferred policy, a review-ready budget recommendation, oracle capture rate, regret, and caveats.
 
 Latest 1M-row semi-synthetic policy validation showed that the XGBoost doubly robust ranking nearly matched oracle under the known treatment effect:
 
 - 1% budget: DR expected incremental conversions `410.196986` versus oracle `423.218691`
 - 10% budget: DR expected incremental conversions `3801.412001` versus oracle `3826.275180`
 - 30% budget: DR expected incremental conversions `10026.723471` versus oracle `10058.940772`
+
+The current decision report recommends reviewing the 10% budget policy:
+
+- selected rows: `20000`
+- expected incremental conversions: `3801.412001`
+- incremental conversions versus random: `1603.589549`
+- oracle capture rate: `0.993502`
+- oracle regret: `24.863179`
 
 This validates the mechanics of budgeted policy comparison under controlled semi-synthetic outcomes. It is still a decision-support simulation, not proof that the same policy would create causal lift on observational production logs.
 

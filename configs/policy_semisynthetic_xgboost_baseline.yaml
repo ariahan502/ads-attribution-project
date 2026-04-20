@@ -9,6 +9,8 @@ policy_random_seed: 42
 score_cols:
   - observational_score
   - doubly_robust_score
+preferred_score_col: doubly_robust_score
+recommended_top_fraction: 0.1
 top_fractions:
   - 0.01
   - 0.05

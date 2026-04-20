@@ -13,7 +13,7 @@ from ads_project.data.schema import validate_baseline_source_quality, validate_b
 from ads_project.features import apply_feature_builder
 from ads_project.models.splits import time_ordered_train_validation_test_split
 from ads_project.pipeline.run_uplift import _coerce_str_list, uplift_spec_from_config
-from ads_project.policy import policy_simulation_report
+from ads_project.policy import policy_decision_report, policy_simulation_report
 from ads_project.uplift import add_semisynthetic_uplift_columns, fit_doubly_robust_baseline, predict_doubly_robust_scores
 
 
@@ -57,6 +57,10 @@ def main() -> None:
         config.get("top_fractions", [0.01, 0.05, 0.1, 0.2, 0.3]),
         field_name="top_fractions",
     )
+    preferred_score_col = str(config.get("preferred_score_col", score_cols[-1]))
+    recommended_top_fraction = config.get("recommended_top_fraction")
+    if recommended_top_fraction is not None:
+        recommended_top_fraction = float(recommended_top_fraction)
 
     print(f"Loading policy simulation data from: {dataset_path}")
     df = read_parquet(dataset_path)
@@ -108,6 +112,12 @@ def main() -> None:
         random_seed=policy_random_seed,
     )
     policy_frame = pd.DataFrame(report["policies"])
+    decision_report = policy_decision_report(
+        report,
+        preferred_score_col=preferred_score_col,
+        recommended_top_fraction=recommended_top_fraction,
+    )
+    decision_frame = pd.DataFrame(decision_report["policy_comparisons"])
 
     run_summary = {
         "dataset_path": str(dataset_path),
@@ -118,6 +128,8 @@ def main() -> None:
         "synthetic_seed": seed,
         "policy_random_seed": policy_random_seed,
         "score_cols": score_cols,
+        "preferred_score_col": preferred_score_col,
+        "recommended_top_fraction": recommended_top_fraction,
         "top_fractions": top_fractions,
         "learner_type": spec.learner_type,
         "learner_params": spec.resolved_learner_params,
@@ -135,6 +147,8 @@ def main() -> None:
     write_json(run_summary, run_dir / "run_summary.json")
     write_json(report, run_dir / "policy_simulation.json")
     write_csv(policy_frame, run_dir / "policy_simulation.csv")
+    write_json(decision_report, run_dir / "policy_decision_report.json")
+    write_csv(decision_frame, run_dir / "policy_decision_report.csv")
 
     manifest = build_run_manifest(
         run_dir=run_dir,
@@ -153,6 +167,8 @@ def main() -> None:
             "run_summary": "run_summary.json",
             "policy_simulation": "policy_simulation.json",
             "policy_simulation_csv": "policy_simulation.csv",
+            "policy_decision_report": "policy_decision_report.json",
+            "policy_decision_report_csv": "policy_decision_report.csv",
         },
         extra_metadata={
             "report_type": "semi_synthetic_policy_simulation",
@@ -163,14 +179,14 @@ def main() -> None:
     )
     write_json(manifest, run_dir / "manifest.json")
 
-    top_policy = (
-        policy_frame[policy_frame["policy_name"] == f"top_{score_cols[-1]}"]
-        .sort_values("top_fraction")
-        .iloc[0]
+    decision_summary = decision_report["summary"]
+    print(
+        f"Recommended {preferred_score_col} policy budget fraction: "
+        f"{decision_summary['recommended_top_fraction']:.2%}"
     )
     print(
-        f"Smallest-budget {score_cols[-1]} policy true-effect lift: "
-        f"{top_policy.get('true_effect_lift', float('nan')):.6f}"
+        "Recommended expected incremental conversions: "
+        f"{decision_summary['recommended_expected_incremental_conversions']:.6f}"
     )
     print(f"Saved policy simulation artifacts to: {run_dir}")
 
