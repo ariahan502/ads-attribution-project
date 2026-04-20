@@ -289,6 +289,39 @@ Adding nonlinear XGBoost learners to the same benchmark produced much stronger r
 
 This is evidence that the semi-synthetic signal is learnable with the current feature surface and a stronger estimator. It still should not be read as causal validation of the observational production data.
 
+## Policy Simulation Path
+
+The repo includes a first offline targeting policy simulation workflow on top of the semi-synthetic uplift benchmark.
+
+Smoke run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_policy_simulation --config configs/policy_semisynthetic_xgboost_smoke.yaml
+```
+
+Baseline run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_policy_simulation --config configs/policy_semisynthetic_xgboost_baseline.yaml
+```
+
+These runs currently produce:
+
+- `policy_simulation.json`
+- `policy_simulation.csv`
+- `run_summary.json`
+- `manifest.json`
+
+The report compares deterministic random targeting, learned top-k policies, and an oracle true-effect policy across configured budget fractions.
+
+Latest 1M-row semi-synthetic policy validation showed that the XGBoost doubly robust ranking nearly matched oracle under the known treatment effect:
+
+- 1% budget: DR expected incremental conversions `410.196986` versus oracle `423.218691`
+- 10% budget: DR expected incremental conversions `3801.412001` versus oracle `3826.275180`
+- 30% budget: DR expected incremental conversions `10026.723471` versus oracle `10058.940772`
+
+This validates the mechanics of budgeted policy comparison under controlled semi-synthetic outcomes. It is still a decision-support simulation, not proof that the same policy would create causal lift on observational production logs.
+
 ## Config Guide
 
 Key configs currently in use:
@@ -323,6 +356,10 @@ Key configs currently in use:
   - smoke semi-synthetic uplift evaluation with rank-style benchmark features and XGBoost learners
 - `configs/uplift_semisynthetic_rank_xgboost_baseline.yaml`
   - 1M-row semi-synthetic uplift evaluation with rank-style benchmark features and XGBoost learners
+- `configs/policy_semisynthetic_xgboost_smoke.yaml`
+  - smoke policy simulation on semi-synthetic XGBoost uplift scores
+- `configs/policy_semisynthetic_xgboost_baseline.yaml`
+  - 1M-row policy simulation on semi-synthetic XGBoost uplift scores
 
 Older configs are still kept for historical comparison and intermediate experiments:
 
