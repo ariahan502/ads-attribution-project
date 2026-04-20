@@ -113,6 +113,8 @@ def main() -> None:
         "synthetic_seed": seed,
         "numeric_features": spec.numeric_features,
         "categorical_features": spec.categorical_features,
+        "learner_type": spec.learner_type,
+        "learner_params": spec.resolved_learner_params,
         "row_counts": {
             "train_rows": len(train_df),
             "validation_rows": len(validation_df),

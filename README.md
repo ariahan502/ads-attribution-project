@@ -252,6 +252,12 @@ PYTHONPATH=src python -m ads_project.pipeline.run_semisynthetic_uplift --config 
 
 The rank-feature variant is benchmark-oriented: it adds full-table rank transforms for semi-synthetic evaluation, but it should not be treated as a serving-time-safe production feature set without a separate point-in-time design.
 
+XGBoost rank-feature benchmark run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_semisynthetic_rank_xgboost_baseline.yaml
+```
+
 These runs produce `known_effect_ranking.json`, which compares each learned score against the known treatment effect using rank correlations and top-k true-effect lift.
 
 Latest 1M-row validation showed weak recovery of the known effect ranking:
@@ -272,6 +278,16 @@ Adding semi-synthetic rank features improved recovery slightly but did not solve
 - doubly robust top-decile true-effect lift stayed roughly flat at `1.121761`
 
 This suggests the benchmark is sensitive enough to detect incremental changes, but stronger uplift estimators are still needed.
+
+Adding nonlinear XGBoost learners to the same benchmark produced much stronger recovery:
+
+- observational score Spearman correlation with true effect: `0.977790`
+- doubly robust score Spearman correlation with true effect: `0.988762`
+- observational top-decile true-effect lift: `1.717863`
+- doubly robust top-decile true-effect lift: `1.726784`
+- oracle top-decile true-effect lift: `1.738078`
+
+This is evidence that the semi-synthetic signal is learnable with the current feature surface and a stronger estimator. It still should not be read as causal validation of the observational production data.
 
 ## Config Guide
 
@@ -303,6 +319,10 @@ Key configs currently in use:
   - smoke semi-synthetic uplift evaluation with rank-style benchmark features
 - `configs/uplift_semisynthetic_rank_baseline.yaml`
   - 1M-row semi-synthetic uplift evaluation with rank-style benchmark features
+- `configs/uplift_semisynthetic_rank_xgboost_smoke.yaml`
+  - smoke semi-synthetic uplift evaluation with rank-style benchmark features and XGBoost learners
+- `configs/uplift_semisynthetic_rank_xgboost_baseline.yaml`
+  - 1M-row semi-synthetic uplift evaluation with rank-style benchmark features and XGBoost learners
 
 Older configs are still kept for historical comparison and intermediate experiments:
 

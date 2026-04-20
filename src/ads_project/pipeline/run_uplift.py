@@ -45,6 +45,8 @@ def uplift_spec_from_config(config: dict[str, Any]) -> UpliftSpec:
         propensity_clip=float(config.get("propensity_clip", 0.05)),
         max_iter=int(config.get("max_iter", 100)),
         ridge_alpha=float(config.get("ridge_alpha", 1.0)),
+        learner_type=str(config.get("learner_type", "linear")),
+        learner_params=dict(config.get("learner_params") or {}),
     )
 
 
@@ -155,6 +157,8 @@ def main() -> None:
         "numeric_features": spec.numeric_features,
         "categorical_features": spec.categorical_features,
         "propensity_clip": spec.propensity_clip,
+        "learner_type": spec.learner_type,
+        "learner_params": spec.resolved_learner_params,
         "row_counts": {
             "train_rows": len(train_df),
             "validation_rows": len(validation_df),

@@ -9,7 +9,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
 from ads_project.evaluation.metrics import binary_classification_metrics
 
@@ -37,22 +37,36 @@ class UpliftSpec:
     propensity_clip: float = 0.05
     max_iter: int = 100
     ridge_alpha: float = 1.0
+    learner_type: str = "linear"
+    learner_params: dict[str, Any] | None = None
 
     @property
     def all_features(self) -> list[str]:
         return [*self.numeric_features, *self.categorical_features]
 
+    @property
+    def resolved_learner_params(self) -> dict[str, Any]:
+        return dict(self.learner_params or {})
 
-def _build_preprocess(spec: UpliftSpec) -> ColumnTransformer:
+
+def _build_preprocess(spec: UpliftSpec, *, categorical_encoding: str = "onehot") -> ColumnTransformer:
     numeric_pipeline = Pipeline(
         [
             ("impute", SimpleImputer(strategy="median")),
         ]
     )
+
+    if categorical_encoding == "onehot":
+        encoder = OneHotEncoder(handle_unknown="ignore")
+    elif categorical_encoding == "ordinal":
+        encoder = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)
+    else:
+        raise ValueError(f"Unsupported categorical_encoding: {categorical_encoding}")
+
     categorical_pipeline = Pipeline(
         [
             ("impute", SimpleImputer(strategy="most_frequent")),
-            ("encode", OneHotEncoder(handle_unknown="ignore")),
+            ("encode", encoder),
         ]
     )
     return ColumnTransformer(
@@ -64,6 +78,11 @@ def _build_preprocess(spec: UpliftSpec) -> ColumnTransformer:
 
 
 def _build_classifier(spec: UpliftSpec) -> Pipeline:
+    if spec.learner_type == "xgboost":
+        return _build_xgboost_classifier(spec)
+    if spec.learner_type != "linear":
+        raise ValueError(f"Unsupported uplift learner_type: {spec.learner_type}")
+
     return Pipeline(
         [
             ("preprocess", _build_preprocess(spec)),
@@ -73,10 +92,74 @@ def _build_classifier(spec: UpliftSpec) -> Pipeline:
 
 
 def _build_regressor(spec: UpliftSpec) -> Pipeline:
+    if spec.learner_type == "xgboost":
+        return _build_xgboost_regressor(spec)
+    if spec.learner_type != "linear":
+        raise ValueError(f"Unsupported uplift learner_type: {spec.learner_type}")
+
     return Pipeline(
         [
             ("preprocess", _build_preprocess(spec)),
             ("reg", Ridge(alpha=spec.ridge_alpha)),
+        ]
+    )
+
+
+def _default_xgboost_params(spec: UpliftSpec) -> dict[str, Any]:
+    params = {
+        "tree_method": "hist",
+        "random_state": 42,
+        "n_jobs": 1,
+        "n_estimators": 100,
+        "max_depth": 3,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+    }
+    params.update(spec.resolved_learner_params)
+    return params
+
+
+def _build_xgboost_classifier(spec: UpliftSpec) -> Pipeline:
+    try:
+        from xgboost import XGBClassifier
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "xgboost is required for uplift learner_type='xgboost'. Install it with `pip install xgboost`."
+        ) from exc
+
+    xgboost_params = {
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+        **_default_xgboost_params(spec),
+    }
+
+    return Pipeline(
+        [
+            ("preprocess", _build_preprocess(spec, categorical_encoding="ordinal")),
+            ("clf", XGBClassifier(**xgboost_params)),
+        ]
+    )
+
+
+def _build_xgboost_regressor(spec: UpliftSpec) -> Pipeline:
+    try:
+        from xgboost import XGBRegressor
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "xgboost is required for uplift learner_type='xgboost'. Install it with `pip install xgboost`."
+        ) from exc
+
+    xgboost_params = {
+        "objective": "reg:squarederror",
+        "eval_metric": "rmse",
+        **_default_xgboost_params(spec),
+    }
+
+    return Pipeline(
+        [
+            ("preprocess", _build_preprocess(spec, categorical_encoding="ordinal")),
+            ("reg", XGBRegressor(**xgboost_params)),
         ]
     )
 
