@@ -332,6 +332,41 @@ The current decision report recommends reviewing the 10% budget policy:
 
 This validates the mechanics of budgeted policy comparison under controlled semi-synthetic outcomes. It is still a decision-support simulation, not proof that the same policy would create causal lift on observational production logs.
 
+## Batch Scoring Path
+
+The repo includes a first deterministic row-level batch scoring workflow for the semi-synthetic XGBoost uplift path.
+
+Smoke run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_batch_scoring --config configs/batch_score_semisynthetic_xgboost_smoke.yaml
+```
+
+Baseline run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_batch_scoring --config configs/batch_score_semisynthetic_xgboost_baseline.yaml
+```
+
+These runs currently produce:
+
+- `batch_scores.csv`
+- `batch_scores.parquet`
+- `batch_score_summary.json`
+- `run_summary.json`
+- `manifest.json`
+
+The scored output schema includes row identifiers, uplift scores, policy rank, score percentile, configured top-fraction, and a `recommended_policy` flag.
+
+Latest 1M-row batch scoring validation produced:
+
+- scored rows: `200001`
+- recommended rows: `20000`
+- recommended expected incremental conversions: `3801.412001`
+- recommended expected incremental conversions per 1k selected: `190.070600`
+
+As with the policy report, this validates the mechanics of batch scoring under controlled semi-synthetic outcomes. It is not a deployment-ready causal policy for observational production logs.
+
 ## Config Guide
 
 Key configs currently in use:
@@ -370,6 +405,10 @@ Key configs currently in use:
   - smoke policy simulation on semi-synthetic XGBoost uplift scores
 - `configs/policy_semisynthetic_xgboost_baseline.yaml`
   - 1M-row policy simulation on semi-synthetic XGBoost uplift scores
+- `configs/batch_score_semisynthetic_xgboost_smoke.yaml`
+  - smoke row-level batch scoring on semi-synthetic XGBoost uplift scores
+- `configs/batch_score_semisynthetic_xgboost_baseline.yaml`
+  - 1M-row row-level batch scoring on semi-synthetic XGBoost uplift scores
 
 Older configs are still kept for historical comparison and intermediate experiments:
 
