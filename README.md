@@ -17,6 +17,7 @@ This repo does not claim causal uplift from observational click logs. The curren
 What works today:
 
 - deterministic smoke sample generation from a tracked fixture
+- GitHub Actions smoke CI for the self-contained fixture path
 - deterministic sample generation from the raw local dataset
 - reusable CTR feature builders under `src/ads_project/features/`
 - train-only campaign CTR encoding with unseen-campaign fallback
@@ -41,6 +42,16 @@ Commands use the `src/` layout directly:
 ```bash
 PYTHONPATH=src python -m ...
 ```
+
+## Quality Gate
+
+Run the self-contained smoke gate locally with:
+
+```bash
+bash scripts/ci_smoke.sh
+```
+
+This is the same command used by GitHub Actions. It compiles the package and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, and batch scoring from the tracked fixture.
 
 ## Quickstart
 
