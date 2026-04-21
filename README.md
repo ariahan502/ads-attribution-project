@@ -12,6 +12,10 @@ The current strongest path in the repo is:
 
 This repo does not claim causal uplift from observational click logs. The current CTR pipeline is a reproducible modeling baseline and experiment surface, not proof of incremental ad value.
 
+For a concise reviewer-facing summary of intended use, strongest results, assumptions, and limitations, see:
+
+- `MODEL_CARD.md`
+
 ## Current Repo Status
 
 What works today:
@@ -27,6 +31,7 @@ What works today:
 - config-driven observational uplift baselines with propensity and doubly robust scoring
 - uplift policy-curve diagnostics for comparing observational and adjusted rankings across top-k groups
 - semi-synthetic uplift evaluation with a known treatment-effect signal
+- policy simulation, decision reporting, and deterministic batch scoring
 - structured run bundles with split counts, validation metrics, test metrics, evaluation summaries, and slice-level evaluation
 
 ## Setup
