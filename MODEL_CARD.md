@@ -106,7 +106,7 @@ The smoke gate runs the lightweight pytest suite, compiles the package, and runs
 - semi-synthetic XGBoost uplift evaluation
 - policy simulation
 - batch scoring
-- feature and score drift reporting
+- feature, score, and calibration drift reporting
 
 Each pipeline writes a run bundle under:
 
@@ -126,7 +126,5 @@ The project deliberately separates predictive, descriptive, and causal claims:
 
 ## Recommended Next Steps
 
-- Add calibration drift reports for predictive model calibration.
-- Add calibration drift reports for predictive model calibration.
 - Add an observational policy report with explicit assumptions and caveats.
 - Optionally add a lightweight local scoring API after the batch path remains stable.

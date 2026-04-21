@@ -13,3 +13,4 @@ python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_
 python -m ads_project.pipeline.run_policy_simulation --config configs/policy_semisynthetic_xgboost_smoke.yaml
 python -m ads_project.pipeline.run_batch_scoring --config configs/batch_score_semisynthetic_xgboost_smoke.yaml
 python -m ads_project.pipeline.run_drift_report --config configs/drift_semisynthetic_xgboost_smoke.yaml
+python -m ads_project.pipeline.run_calibration_drift --config configs/calibration_drift_smoke.yaml

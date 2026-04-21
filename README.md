@@ -51,7 +51,7 @@ What works today:
 - uplift policy-curve diagnostics for comparing observational and adjusted rankings across top-k groups
 - semi-synthetic uplift evaluation with a known treatment-effect signal
 - policy simulation, decision reporting, and deterministic batch scoring
-- feature and score drift reporting
+- feature, score, and calibration drift reporting
 - structured run bundles with split counts, validation metrics, test metrics, evaluation summaries, and slice-level evaluation
 
 ## Setup
@@ -60,6 +60,12 @@ Install dependencies from `requirements.txt`:
 
 ```bash
 pip install -r requirements.txt
+```
+
+For editable local development with the optional pre-commit dependency:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 Commands use the `src/` layout directly:
@@ -76,7 +82,15 @@ Run the self-contained smoke gate locally with:
 bash scripts/ci_smoke.sh
 ```
 
-This is the same command used by GitHub Actions. It runs the lightweight pytest suite, compiles the package, and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, batch scoring, and drift reporting from the tracked fixture.
+This is the same command used by GitHub Actions. It runs the lightweight pytest suite, compiles the package, and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, batch scoring, drift reporting, and calibration drift reporting from the tracked fixture.
+
+For a local pre-commit style check, run:
+
+```bash
+bash scripts/local_quality.sh
+```
+
+The repo also includes a local `.pre-commit-config.yaml` hook that calls the same command.
 
 ## Quickstart
 
@@ -405,7 +419,7 @@ As with the policy report, this validates the mechanics of batch scoring under c
 
 ## Monitoring Path
 
-The repo includes a first feature and score drift workflow for the semi-synthetic XGBoost uplift path.
+The repo includes feature and score drift reporting for the semi-synthetic XGBoost uplift path, plus CTR calibration drift reporting for the split-aware CTR baseline.
 
 Smoke run:
 
@@ -436,6 +450,37 @@ Latest 1M-row drift validation produced:
 - current rows: `200001`
 - max feature PSI: `0.007994`
 - max score PSI: `0.003635`
+
+### Calibration drift
+
+Smoke run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_calibration_drift --config configs/calibration_drift_smoke.yaml
+```
+
+Baseline run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_calibration_drift --config configs/calibration_drift_baseline.yaml
+```
+
+These runs train on the train split, compare calibration on the validation/reference split versus the held-out current/test split, and produce:
+
+- `calibration_drift.json`
+- `calibration_drift_summary.json`
+- `calibration_drift.csv`
+- `manifest.json`
+
+The report includes positive-rate, average-score, log-loss, Brier-score, calibration-MAE, and per-bin calibration deltas.
+
+Latest 1M-row calibration drift validation produced:
+
+- reference rows: `99999`
+- current rows: `200001`
+- reference calibration MAE: `0.111682`
+- current calibration MAE: `0.090443`
+- calibration MAE delta: `-0.021238`
 
 ## Config Guide
 
@@ -483,6 +528,10 @@ Key configs currently in use:
   - smoke feature and score drift report on semi-synthetic XGBoost uplift scores
 - `configs/drift_semisynthetic_xgboost_baseline.yaml`
   - 1M-row feature and score drift report on semi-synthetic XGBoost uplift scores
+- `configs/calibration_drift_smoke.yaml`
+  - smoke CTR calibration drift report from the tracked fixture path
+- `configs/calibration_drift_baseline.yaml`
+  - 1M-row CTR calibration drift report
 
 Older configs are still kept for historical comparison and intermediate experiments:
 
@@ -556,7 +605,7 @@ Current safeguards:
 - `src/ads_project/policy/`
   - policy simulation, decision reporting, and batch scoring helpers
 - `src/ads_project/monitoring/`
-  - feature and score drift helpers
+  - feature, score, and calibration drift helpers
 - `src/ads_project/pipeline/`
   - runnable CLI entrypoints for sampling, training, model comparison, attribution, uplift, policy, scoring, and drift
 
@@ -571,4 +620,4 @@ Current safeguards:
 
 ## Current Best Next Step
 
-The next highest-value engineering task is calibration drift reporting, followed by optional local scoring API work if an online-style interface is useful.
+The next highest-value engineering task is an observational policy report with explicit assumptions and caveats, followed by optional local scoring API work if an online-style interface is useful.

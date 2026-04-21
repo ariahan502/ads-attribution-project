@@ -20,7 +20,7 @@ The project produces reproducible run bundles for:
 - uplift diagnostics and semi-synthetic validation
 - budgeted policy simulation
 - row-level batch scoring
-- feature and score drift monitoring
+- feature, score, and calibration drift monitoring
 
 Each run stores config snapshots, summaries, metrics, and report artifacts under `artifacts/runs/`.
 
@@ -43,7 +43,7 @@ The outputs are intended for offline decision support:
 - validate uplift-ranking mechanics on known semi-synthetic effects
 - review targeting policies under fixed budget fractions
 - generate deterministic scored outputs for downstream analysis
-- monitor feature and score distribution changes over time
+- monitor feature, score, and calibration changes over time
 
 ## Important Caveat
 

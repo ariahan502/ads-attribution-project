@@ -27,41 +27,26 @@ The project supports data preparation, CTR modeling, attribution reporting, upli
 - XGBoost uplift learners for nonlinear benchmark recovery
 - Budgeted policy simulation and decision reports
 - Deterministic row-level batch scoring outputs
-- Feature and score drift reports
+- Feature, score, and calibration drift reports
 - Lightweight pytest coverage and GitHub Actions smoke CI
 
 ## Near-Term Roadmap
 
-### 1. Calibration Drift
+### 1. Local Quality Tooling
 
-Add monitoring for calibration stability across time windows or reference/current splits.
-
-Expected outputs:
-
-- `calibration_drift.json`
-- `calibration_drift.csv`
-- summary metrics for calibration error changes
-
-Validation:
-
-- smoke calibration drift run works from the tracked fixture
-- baseline run works on the 1M local sample
-
-### 2. Local Quality Tooling
-
-Add a small local quality command or pre-commit setup that runs tests and smoke-safe checks before changes are committed.
+Keep the local quality command and optional pre-commit hook aligned with CI as the smoke surface grows.
 
 Expected outputs:
 
 - documented local quality command
-- optional `.pre-commit-config.yaml`
+- maintained `.pre-commit-config.yaml`
 
 Validation:
 
 - local quality command passes from a clean checkout
 - CI continues to use the same or stricter checks
 
-### 3. Observational Policy Report
+### 2. Observational Policy Report
 
 Extend decision reporting to observational data with explicit assumptions and caveats.
 
@@ -75,7 +60,7 @@ Validation:
 - report runs from config
 - output schema matches the semi-synthetic policy report where practical
 
-### 4. Optional Local Scoring API
+### 3. Optional Local Scoring API
 
 Add a lightweight local API only after the batch scoring path remains stable.
 

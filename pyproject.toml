@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ads-attribution-project"
+version = "0.1.0"
+description = "Reproducible offline ads modeling and decision-support pipelines."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "joblib",
+  "jupyter",
+  "matplotlib",
+  "notebook",
+  "numpy",
+  "pandas",
+  "pyarrow",
+  "pydantic",
+  "pyyaml",
+  "scikit-learn",
+  "tqdm",
+  "uvicorn",
+  "xgboost",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit",
+  "pytest",
+]
+
+[project.scripts]
+ads-sample-data = "ads_project.pipeline.sample_data:main"
+ads-train-ctr = "ads_project.pipeline.train_ctr:main"
+ads-compare-ctr = "ads_project.pipeline.compare_ctr:main"
+ads-run-attribution = "ads_project.pipeline.run_attribution:main"
+ads-run-uplift = "ads_project.pipeline.run_uplift:main"
+ads-run-semisynthetic-uplift = "ads_project.pipeline.run_semisynthetic_uplift:main"
+ads-run-policy-simulation = "ads_project.pipeline.run_policy_simulation:main"
+ads-run-batch-scoring = "ads_project.pipeline.run_batch_scoring:main"
+ads-run-drift-report = "ads_project.pipeline.run_drift_report:main"
+ads-run-calibration-drift = "ads_project.pipeline.run_calibration_drift:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

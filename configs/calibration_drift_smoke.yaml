@@ -1,0 +1,33 @@
+dataset_path: data/samples/sample_smoke.parquet
+timestamp_col: timestamp
+label: click
+feature_builder: ctr_notebook_v2
+train_only_encodings:
+  - campaign_ctr
+model_type: logistic_regression
+model_params:
+  max_iter: 100
+numeric_features:
+  - log_cost
+  - log_cpo
+  - time_since_last_click
+  - has_prev_click
+  - log_time_since_last_click
+  - campaign_ctr
+categorical_features:
+  - cat1
+  - cat2
+  - cat3
+  - cat4
+  - cat5
+  - cat6
+  - cat7
+  - cat8
+  - cat9
+  - campaign
+  - recency_bucket
+train_fraction: 0.7
+validation_fraction: 0.1
+calibration_bins: 5
+output_dir: artifacts/runs
+run_name: calibration_drift_smoke
