@@ -56,7 +56,7 @@ Run the self-contained smoke gate locally with:
 bash scripts/ci_smoke.sh
 ```
 
-This is the same command used by GitHub Actions. It compiles the package and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, and batch scoring from the tracked fixture.
+This is the same command used by GitHub Actions. It runs the lightweight pytest suite, compiles the package, and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, and batch scoring from the tracked fixture.
 
 ## Quickstart
 

@@ -4,6 +4,7 @@ set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-src}"
 
 python -m compileall -q src scripts
+python -m pytest -q
 
 python -m ads_project.pipeline.sample_data --config configs/sample_smoke.yaml
 python -m ads_project.pipeline.train_ctr --config configs/ctr_smoke_v2_split.yaml

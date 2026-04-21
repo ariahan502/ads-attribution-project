@@ -98,7 +98,7 @@ Run the self-contained smoke gate:
 bash scripts/ci_smoke.sh
 ```
 
-The smoke gate compiles the package and runs:
+The smoke gate runs the lightweight pytest suite, compiles the package, and runs:
 
 - fixture-backed sample generation
 - split-aware CTR training
@@ -126,7 +126,6 @@ The project deliberately separates predictive, descriptive, and causal claims:
 ## Recommended Next Steps
 
 - Add a short portfolio/business summary for non-technical readers.
-- Add lightweight tests around schema validation, feature builders, and policy scoring.
 - Add drift reports for feature distributions and score distributions.
 - Add an observational policy report with explicit assumptions and caveats.
 - Optionally add a lightweight local scoring API after the batch path remains stable.
