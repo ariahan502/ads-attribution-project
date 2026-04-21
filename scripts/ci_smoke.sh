@@ -12,3 +12,4 @@ python -m ads_project.pipeline.run_attribution --config configs/attribution_smok
 python -m ads_project.pipeline.run_semisynthetic_uplift --config configs/uplift_semisynthetic_rank_xgboost_smoke.yaml
 python -m ads_project.pipeline.run_policy_simulation --config configs/policy_semisynthetic_xgboost_smoke.yaml
 python -m ads_project.pipeline.run_batch_scoring --config configs/batch_score_semisynthetic_xgboost_smoke.yaml
+python -m ads_project.pipeline.run_drift_report --config configs/drift_semisynthetic_xgboost_smoke.yaml

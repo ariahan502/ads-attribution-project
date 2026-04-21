@@ -32,6 +32,7 @@ What works today:
 - uplift policy-curve diagnostics for comparing observational and adjusted rankings across top-k groups
 - semi-synthetic uplift evaluation with a known treatment-effect signal
 - policy simulation, decision reporting, and deterministic batch scoring
+- feature and score drift reporting
 - structured run bundles with split counts, validation metrics, test metrics, evaluation summaries, and slice-level evaluation
 
 ## Setup
@@ -56,7 +57,7 @@ Run the self-contained smoke gate locally with:
 bash scripts/ci_smoke.sh
 ```
 
-This is the same command used by GitHub Actions. It runs the lightweight pytest suite, compiles the package, and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, and batch scoring from the tracked fixture.
+This is the same command used by GitHub Actions. It runs the lightweight pytest suite, compiles the package, and runs smoke versions of sample generation, CTR training, attribution, semi-synthetic uplift, policy simulation, batch scoring, and drift reporting from the tracked fixture.
 
 ## Quickstart
 
@@ -383,6 +384,40 @@ Latest 1M-row batch scoring validation produced:
 
 As with the policy report, this validates the mechanics of batch scoring under controlled semi-synthetic outcomes. It is not a deployment-ready causal policy for observational production logs.
 
+## Monitoring Path
+
+The repo includes a first feature and score drift workflow for the semi-synthetic XGBoost uplift path.
+
+Smoke run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_drift_report --config configs/drift_semisynthetic_xgboost_smoke.yaml
+```
+
+Baseline run:
+
+```bash
+PYTHONPATH=src python -m ads_project.pipeline.run_drift_report --config configs/drift_semisynthetic_xgboost_baseline.yaml
+```
+
+These runs currently produce:
+
+- `drift_summary.json`
+- `feature_drift.json`
+- `feature_drift.csv`
+- `score_drift.json`
+- `score_drift.csv`
+- `manifest.json`
+
+The report compares the train/reference split against the held-out current/scoring split using numeric and categorical summary statistics plus population stability index (PSI).
+
+Latest 1M-row drift validation produced:
+
+- reference rows: `700000`
+- current rows: `200001`
+- max feature PSI: `0.007994`
+- max score PSI: `0.003635`
+
 ## Config Guide
 
 Key configs currently in use:
@@ -425,6 +460,10 @@ Key configs currently in use:
   - smoke row-level batch scoring on semi-synthetic XGBoost uplift scores
 - `configs/batch_score_semisynthetic_xgboost_baseline.yaml`
   - 1M-row row-level batch scoring on semi-synthetic XGBoost uplift scores
+- `configs/drift_semisynthetic_xgboost_smoke.yaml`
+  - smoke feature and score drift report on semi-synthetic XGBoost uplift scores
+- `configs/drift_semisynthetic_xgboost_baseline.yaml`
+  - 1M-row feature and score drift report on semi-synthetic XGBoost uplift scores
 
 Older configs are still kept for historical comparison and intermediate experiments:
 

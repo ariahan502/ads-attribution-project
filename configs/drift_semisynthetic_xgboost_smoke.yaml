@@ -1,0 +1,57 @@
+dataset_path: data/samples/sample_smoke.parquet
+timestamp_col: timestamp
+feature_builder: semisynthetic_rank_v1
+synthetic_treatment_col: synthetic_treatment
+synthetic_outcome_col: synthetic_outcome
+true_effect_col: true_treatment_effect
+synthetic_seed: 42
+score_cols:
+  - observational_score
+  - doubly_robust_score
+numeric_features:
+  - log_cost
+  - log_cpo
+  - time_since_last_click
+  - has_prev_click
+  - log_time_since_last_click
+  - cost_rank
+  - cpo_rank
+  - recency_rank
+categorical_features:
+  - cat1
+  - cat2
+  - cat3
+  - cat4
+  - cat5
+  - cat6
+  - cat7
+  - cat8
+  - cat9
+  - campaign
+  - recency_bucket
+drift_numeric_features:
+  - log_cost
+  - log_cpo
+  - log_time_since_last_click
+  - cost_rank
+  - cpo_rank
+  - recency_rank
+drift_categorical_features:
+  - campaign
+  - recency_bucket
+train_fraction: 0.7
+validation_fraction: 0.1
+propensity_clip: 0.05
+learner_type: xgboost
+learner_params:
+  n_estimators: 40
+  max_depth: 2
+  learning_rate: 0.08
+  subsample: 0.9
+  colsample_bytree: 0.9
+  random_state: 42
+  n_jobs: 1
+psi_bins: 10
+categorical_top_n: 20
+output_dir: artifacts/runs
+run_name: drift_semisynthetic_xgboost_smoke
