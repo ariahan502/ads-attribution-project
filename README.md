@@ -1,20 +1,38 @@
 # Ads Attribution Project
 
-This repository is an offline ads modeling project that is being moved from notebook-heavy exploration into a reproducible, config-driven pipeline.
+This repository is a reproducible, config-driven offline ads modeling and decisioning pipeline.
 
-The current strongest path in the repo is:
+The project supports:
 
 - generate a reproducible parquet sample
 - train a split-aware CTR model from config
 - compare logistic regression and XGBoost on the same feature set
 - generate descriptive attribution summaries from package code
-- inspect a structured run bundle under `artifacts/runs/`
+- evaluate uplift rankings with observational and semi-synthetic workflows
+- simulate budgeted targeting policies and write row-level batch scoring outputs
+- monitor feature and score drift
+- inspect structured run bundles under `artifacts/runs/`
 
-This repo does not claim causal uplift from observational click logs. The current CTR pipeline is a reproducible modeling baseline and experiment surface, not proof of incremental ad value.
+This repo is careful about causal claims: CTR and attribution outputs are decision-support signals, while semi-synthetic uplift evaluation validates ranking mechanics against known treatment effects.
 
 For a concise reviewer-facing summary of intended use, strongest results, assumptions, and limitations, see:
 
 - `MODEL_CARD.md`
+
+## Portfolio Snapshot
+
+This project demonstrates an end-to-end ads decisioning workflow:
+
+- predictive modeling for click-through rate ranking
+- descriptive attribution for campaign review
+- uplift diagnostics with explicit causal caveats
+- semi-synthetic treatment-effect validation
+- budgeted policy simulation and decision reporting
+- deterministic batch scoring outputs
+- feature and score drift monitoring
+- smoke CI and lightweight pytest coverage
+
+Latest semi-synthetic validation shows the XGBoost doubly robust uplift score recovering the known treatment-effect ranking with Spearman correlation `0.988762`. The 10% policy decision report captures `0.993502` of oracle expected incremental conversions under the controlled benchmark.
 
 ## Current Repo Status
 

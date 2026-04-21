@@ -2,7 +2,7 @@
 
 ## Summary
 
-This project is an offline ads decisioning pipeline built from event-level ad logs. It turns a notebook-style prototype into a reproducible package with config-driven commands for data preparation, CTR modeling, attribution reporting, uplift diagnostics, policy simulation, batch scoring, artifact tracking, and smoke CI.
+This project is an offline ads decisioning pipeline built from event-level ad logs. It provides a reproducible package with config-driven commands for data preparation, CTR modeling, attribution reporting, uplift diagnostics, policy simulation, batch scoring, artifact tracking, monitoring, tests, and smoke CI.
 
 The strongest current story is:
 
