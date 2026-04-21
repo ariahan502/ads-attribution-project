@@ -15,13 +15,14 @@ The project supports:
 
 This repo is careful about causal claims: CTR and attribution outputs are decision-support signals, while semi-synthetic uplift evaluation validates ranking mechanics against known treatment effects.
 
-For a concise reviewer-facing summary of intended use, strongest results, assumptions, and limitations, see:
+For concise summaries of intended use, strongest results, assumptions, and limitations, see:
 
 - `MODEL_CARD.md`
+- `BUSINESS_SUMMARY.md`
 
-## Portfolio Snapshot
+## Project Snapshot
 
-This project demonstrates an end-to-end ads decisioning workflow:
+This project implements an end-to-end ads decisioning workflow:
 
 - predictive modeling for click-through rate ranking
 - descriptive attribution for campaign review
@@ -103,7 +104,7 @@ PYTHONPATH=src python -m ads_project.pipeline.train_ctr --config configs/ctr_smo
 
 This path uses:
 
-- feature builder: `ctr_notebook_v2`
+- reusable CTR feature builder with recency transforms
 - train-only encoding: `campaign_ctr`
 - split shape: `train=70%`, `validation=10%`, `test=20%`
 
@@ -169,7 +170,7 @@ This creates:
 - one run bundle per model
 - one comparison bundle containing `comparison.json`
 
-The comparison report currently ranks models by test ROC AUC and also includes validation metrics for each candidate.
+The comparison report currently ranks models by test ROC AUC and also includes validation metrics for each model.
 
 ## Attribution Path
 
@@ -222,7 +223,7 @@ The current decision-facing report adds:
 - spend share, click share, and conversion share
 - attributed conversion share under time decay
 - simple efficiency indices
-- heuristic priority buckets such as `scale_candidate`, `review_candidate`, and `monitor`
+- heuristic priority buckets for scale, review, and monitoring
 
 These prioritization fields are intended as decision-support hints, not automated budget policy. Small-spend campaigns can look unusually efficient, so the report should still be reviewed alongside raw volume.
 
@@ -516,10 +517,6 @@ Current safeguards:
 - train-only `campaign_ctr` encoding
 - separate validation and test metrics in split-aware bundles
 
-See the local note for feature assumptions and leakage risks:
-
-- `doc/feature-ctr-features/point-in-time-notes.md`
-
 ## Repository Layout
 
 ```text
@@ -539,8 +536,7 @@ See the local note for feature assumptions and leakage risks:
 │   ├── fixtures/
 │   ├── raw/
 │   └── samples/
-├── artifacts/
-└── notebooks/
+└── artifacts/
 ```
 
 ## Code Organization
@@ -557,33 +553,22 @@ See the local note for feature assumptions and leakage risks:
   - classification metrics, calibration/lift summaries, slice-level reports
 - `src/ads_project/uplift/`
   - observational adjustment baselines for propensity and doubly robust scoring
+- `src/ads_project/policy/`
+  - policy simulation, decision reporting, and batch scoring helpers
+- `src/ads_project/monitoring/`
+  - feature and score drift helpers
 - `src/ads_project/pipeline/`
-  - runnable CLI entrypoints for sampling, training, model comparison, attribution, and uplift
+  - runnable CLI entrypoints for sampling, training, model comparison, attribution, uplift, policy, scoring, and drift
 
 ## Notes On Interpretation
 
 - CTR metrics here describe predictive ranking quality, not causal effect.
 - Attribution summaries here are descriptive and comparative, not causal.
-- The uplift pipeline now includes package-level observational adjustment baselines, but it is still not a causal identification pipeline.
-- The current uplift configs use observational `click` as treatment, so scores should be treated as adjusted association-based ranking rather than estimated incrementality.
-- The first doubly robust baseline is useful as a reproducible comparison point, but current policy-curve diagnostics do not support replacing the simpler observational ranking on this dataset.
-- The semi-synthetic evaluation path gives the project a known-effect benchmark, and current results show that uplift-ranking quality is still weak.
-
-See the local note for the current uplift framing:
-
-- `doc/feature-uplift/observational-method-notes.md`
+- Observational uplift diagnostics are ranking diagnostics, not causal identification.
+- The semi-synthetic evaluation path provides a known-effect benchmark for validating uplift-ranking mechanics.
+- XGBoost uplift learners recover the known semi-synthetic effect strongly, but this does not prove real-world causal lift.
 - `campaign_ctr` is train-only and safe for the current split-aware flow, but fold-aware fitting will be needed if the repo adds cross-validation or hyperparameter search.
-- `cpo` and `time_since_last_click` still have documented point-in-time caveats in the local leakage note.
-
-## Legacy Notebooks
-
-Notebooks remain useful for EDA and narrative analysis:
-
-- `notebooks/01_eda.ipynb`
-- `notebooks/02_ctr_model.ipynb`
-
-The source of truth for reusable logic is now the config-backed package code under `src/ads_project/`.
 
 ## Current Best Next Step
 
-The next highest-value task is improving the uplift estimators or feature set so semi-synthetic ranking recovery improves against the known treatment-effect benchmark.
+The next highest-value engineering task is calibration drift reporting, followed by optional local scoring API work if an online-style interface is useful.

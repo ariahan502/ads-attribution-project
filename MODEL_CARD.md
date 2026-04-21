@@ -16,11 +16,11 @@ The strongest current story is:
 
 ## Intended Use
 
-Use this repo as an offline analytics and modeling portfolio project for ads, growth, and marketing data science workflows.
+Use this repo as an offline analytics and modeling project for ads and marketing data workflows.
 
 Appropriate uses:
 
-- demonstrating production-style project structure for data science work
+- running reproducible offline data science workflows
 - running reproducible local experiments from YAML configs
 - comparing CTR models, attribution rules, and uplift-ranking methods
 - generating decision-support reports and row-level scoring outputs
@@ -126,7 +126,7 @@ The project deliberately separates predictive, descriptive, and causal claims:
 
 ## Recommended Next Steps
 
-- Add a short portfolio/business summary for non-technical readers.
+- Add calibration drift reports for predictive model calibration.
 - Add calibration drift reports for predictive model calibration.
 - Add an observational policy report with explicit assumptions and caveats.
 - Optionally add a lightweight local scoring API after the batch path remains stable.
