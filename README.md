@@ -2,8 +2,6 @@
 
 This repository is a reproducible, config-driven offline ads modeling and decisioning pipeline.
 
-The tracked Python package and config-driven commands are the source of truth for reusable implementation. Notebook files under `notebooks/` are kept intentionally lightweight for exploration and narrative walkthroughs.
-
 The project supports:
 
 - generate a reproducible parquet sample
