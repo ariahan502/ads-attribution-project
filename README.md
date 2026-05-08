@@ -1,6 +1,6 @@
-# Ads Attribution Project
+# Ads Measurement and Decisioning System
 
-This repository is a reproducible, config-driven offline ads modeling and decisioning pipeline.
+This repository is the Ads Measurement and Decisioning System: a reproducible, config-driven offline ads modeling and decisioning pipeline.
 
 The project supports:
 

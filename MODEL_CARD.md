@@ -1,4 +1,4 @@
-# Ads Attribution Project Model Card
+# Ads Measurement and Decisioning System Model Card
 
 ## Summary
 
